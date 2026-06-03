@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Evaluación Foros QRQC</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- =====================================================================
+     FIREBASE CONFIG — Reemplaza con tus datos de Firebase Console
+     ===================================================================== -->
+<!-- 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_DOMINIO.firebaseapp.com",
+    projectId: "TU_PROJECT_ID",
+    storageBucket: "TU_BUCKET.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window.db = getFirestore(app);
+</script>
+-->
+
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background: #f0f2f5;
+  color: #1a1f2e;
+  min-height: 100vh;
+}
+
+/* ===== VARIABLES ===== */
+:root {
+  --blue:       #1a6ef5;
+  --blue-light: #e8f0fe;
+  --blue-dark:  #0d47b8;
+  --green:      #16a34a;
+  --green-light:#dcfce7;
+  --amber:      #d97706;
+  --amber-light:#fef3c7;
+  --red:        #dc2626;
+  --red-light:  #fee2e2;
+  --gray-50:    #f8fafc;
+  --gray-100:   #f1f5f9;
+  --gray-200:   #e2e8f0;
+  --gray-300:   #cbd5e1;
+  --gray-400:   #94a3b8;
+  --gray-500:   #64748b;
+  --gray-600:   #475569;
+  --gray-700:   #334155;
+  --gray-800:   #1e293b;
+  --white:      #ffffff;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.10);
+  --radius:     10px;
+  --radius-sm:  6px;
+}
+
+/* ===== TYPOGRAPHY ===== */
+h1 { font-size: 1.5rem; font-weight: 600; }
+h2 { font-size: 1.15rem; font-weight: 600; }
+h3 { font-size: 1rem; font-weight: 600; }
+p  { line-height: 1.6; }
+
+/* ===== BUTTONS ===== */
+button {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: opacity .15s, transform .1s;
+  background: var(--white);
+  color: var(--gray-700);
+  border-color: var(--gray-300);
+}
+button:hover { opacity: .85; }
+button:active { transform: scale(.97); }
+button.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue-dark); }
+button.btn-success { background: var(--green); color: #fff; border-color: #15803d; }
+button.btn-danger  { background: var(--red);   color: #fff; border-color: #b91c1c; }
+button.btn-warning { background: var(--amber); color: #fff; border-color: #b45309; }
+button.btn-ghost   { background: transparent; border-color: transparent; color: var(--gray-500); }
+button:disabled    { opacity: .4; cursor: not-allowed; }
+
+/* ===== INPUTS ===== */
+input[type="text"],
+input[type="date"],
+input[type="password"],
+select,
+textarea {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--gray-800);
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+label { font-size: 12px; font-weight: 500; color: var(--gray-500); display: block; margin-bottom: 4px; }
+
+/* ===== RANGE SLIDER ===== */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gray-200);
+  outline: none;
+  border: none;
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--blue);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===== BADGE ===== */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+.badge-n1  { background: var(--blue-light);  color: var(--blue-dark); }
+.badge-n2  { background: var(--green-light); color: #15803d; }
+.badge-n3  { background: var(--amber-light); color: #92400e; }
+.badge-admin { background: #fce7f3; color: #9d174d; }
+.badge-user  { background: var(--gray-100);  color: var(--gray-600); }
+
+/* ===== SCREEN ===== */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ===== LOGIN ===== */
+#login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a2b4a 0%, #1a6ef5 100%);
+  padding: 1rem;
+}
+#login-box {
+  background: var(--white);
+  border-radius: 14px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+#login-box .logo {
+  width: 56px; height: 56px;
+  background: var(--blue-light);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+#login-box .logo i { font-size: 26px; color: var(--blue); }
+#login-box h1 { font-size: 1.3rem; color: var(--gray-800); margin-bottom: 4px; }
+#login-box p  { font-size: 12px; color: var(--gray-400); margin-bottom: 1.75rem; }
+#login-error  { color: var(--red); font-size: 12px; margin-top: 8px; display: none; }
+#login-hint   { font-size: 11px; color: var(--gray-400); margin-top: 1.25rem; }
+
+/* ===== HEADER ===== */
+#app-header {
+  background: #1a2b4a;
+  color: #fff;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 54px;
+  position: sticky; top: 0; z-index: 200;
+}
+#app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+#app-header .brand i { font-size: 20px; color: #60a5fa; }
+#app-header .hright { display: flex; align-items: center; gap: 8px; }
+#app-header .emp-tag {
+  font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+  background: rgba(255,255,255,.12); border-radius: 4px;
+  padding: 3px 8px; color: #bfdbfe;
+}
+
+/* ===== NAVBAR ===== */
+#app-nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex; gap: 0;
+  padding: 0 16px;
+  overflow-x: auto;
+}
+.nav-btn {
+  border: none; background: transparent;
+  color: var(--gray-500); font-size: 13px; font-weight: 500;
+  padding: 12px 14px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  gap: 6px;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+}
+.nav-btn:hover { color: var(--blue); background: transparent; }
+.nav-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ===== CONTENT ===== */
+#app-content { padding: 20px; max-width: 960px; margin: 0 auto; }
+
+/* ===== SECTION TITLE ===== */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+  margin-bottom: 16px;
+}
+.section-header h2 { color: var(--gray-800); }
+
+/* ===== FORM GRID ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+/* ===== EVAL TABLE ===== */
+.eval-cat-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--blue);
+  padding: 8px 0 6px;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 4px;
+}
+.eval-table { width: 100%; border-collapse: collapse; }
+.eval-table th {
+  font-size: 11px; font-weight: 500; color: var(--gray-400);
+  text-align: left; padding: 5px 8px;
+}
+.eval-table th:last-child, .eval-table th:nth-last-child(2) { text-align: center; }
+.eval-table td { padding: 6px 8px; font-size: 13px; color: var(--gray-700); }
+.eval-table tr:nth-child(even) td { background: var(--gray-50); }
+.eval-table td:last-child { text-align: center; font-weight: 600; min-width: 40px; }
+.score-cell { display: flex; align-items: center; gap: 8px; min-width: 160px; }
+.score-cell input[type="range"] { flex: 1; }
+.score-lbl {
+  font-size: 13px; font-weight: 600; min-width: 18px;
+  text-align: right; font-family: 'IBM Plex Mono', monospace;
+  color: var(--gray-700);
+}
+
+/* ===== TOTAL BAR ===== */
+.total-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+  border-top: 2px solid var(--gray-200);
+  margin-top: 12px; padding-top: 14px;
+}
+.total-score { font-size: 28px; font-weight: 600; color: var(--blue); font-family: 'IBM Plex Mono', monospace; }
+.total-max   { font-size: 14px; color: var(--gray-400); }
+.pct-pill {
+  padding: 6px 16px; border-radius: 20px;
+  font-size: 14px; font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
+  transition: background .3s, color .3s;
+}
+
+/* ===== HISTORY CARD ===== */
+.hist-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+}
+.hist-card .hrow {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px; margin-bottom: 6px;
+}
+.hist-card .hmeta {
+  font-size: 11px; color: var(--gray-400);
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.hist-card .hmeta span { display: flex; align-items: center; gap: 4px; }
+.score-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.score-chip {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 6px; border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.chip-hi  { background: var(--green-light); color: #15803d; }
+.chip-mid { background: var(--blue-light);  color: var(--blue-dark); }
+.chip-lo  { background: var(--amber-light); color: #92400e; }
+.chip-zero{ background: var(--red-light);   color: var(--red); }
+
+/* ===== ADMIN CRITERIA ===== */
+.crit-block {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.crit-block-head {
+  background: var(--gray-50);
+  padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.crit-block-head input {
+  flex: 1; background: transparent; border: none;
+  font-weight: 600; font-size: 13px; color: var(--gray-700);
+  outline: none; padding: 0;
+}
+.crit-block-body { padding: 10px 12px; }
+.crit-item-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px;
+}
+.crit-item-row span { font-size: 11px; color: var(--gray-400); min-width: 18px; }
+.crit-item-row input { flex: 1; font-size: 12px; }
+
+/* ===== EMP LIST ===== */
+.emp-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+}
+.emp-num { font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: var(--gray-800); min-width: 80px; }
+
+/* ===== ALERTS ===== */
+.alert {
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.alert-info    { background: var(--blue-light);  color: var(--blue-dark); border: 1px solid #bfdbfe; }
+.alert-success { background: var(--green-light); color: #15803d;          border: 1px solid #bbf7d0; }
+.alert-warning { background: var(--amber-light); color: #92400e;          border: 1px solid #fde68a; }
+.alert-danger  { background: var(--red-light);   color: var(--red);       border: 1px solid #fca5a5; }
+
+/* ===== TOAST ===== */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  padding: 12px 20px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+  background: var(--gray-800); color: #fff;
+  box-shadow: var(--shadow-md);
+  transform: translateY(80px); opacity: 0;
+  transition: transform .25s, opacity .25s;
+  pointer-events: none;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+
+/* ===== MISC ===== */
+.sep { border: none; border-top: 1px solid var(--gray-200); margin: 14px 0; }
+.txt-muted { color: var(--gray-400); font-size: 12px; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray-400); }
+.empty-state i { font-size: 40px; display: block; margin-bottom: 10px; }
+.flex-end { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<!-- =================== LOGIN =================== -->
+<div id="login-wrap">
+  <div id="login-box">
+    <div class="logo"><i class="ti ti-clipboard-check"></i></div>
+    <h1>Evaluación QRQC</h1>
+    <p>Foros de Calidad &nbsp;·&nbsp; N1 &nbsp;·&nbsp; N2 &nbsp;·&nbsp; N3</p>
+    <label for="emp-input">Número de empleado</label>
+    <input type="text" id="emp-input" placeholder="Ej: 1001"
+      style="text-align:center; letter-spacing:2px; font-size:15px; margin-bottom:10px"
+      onkeydown="if(event.key==='Enter') doLogin()" />
+    <button class="btn-primary" style="width:100%; justify-content:center; padding:10px" onclick="doLogin()">
+      <i class="ti ti-login"></i> Ingresar
+    </button>
+    <p id="login-error"><i class="ti ti-alert-circle"></i> Número de empleado no válido</p>
+    <p id="login-hint">Admin: <strong>9999</strong> &nbsp;|&nbsp; Usuario ejemplo: <strong>1001</strong></p>
+  </div>
+</div>
+
+<!-- =================== APP =================== -->
+<div id="app-wrap" style="display:none">
+
+  <header id="app-header">
+    <div class="brand">
+      <i class="ti ti-clipboard-check"></i>
+      <span>Evaluación QRQC</span>
+    </div>
+    <div class="hright">
+      <span class="emp-tag" id="emp-tag"></span>
+      <button id="btn-admin-hdr" class="btn-warning" style="display:none; font-size:12px; padding:5px 10px" onclick="showTab('admin')">
+        <i class="ti ti-settings"></i> Admin
+      </button>
+      <button class="btn-ghost" style="color:#bfdbfe" onclick="doLogout()">
+        <i class="ti ti-logout"></i>
+      </button>
+    </div>
+  </header>
+
+  <nav id="app-nav">
+    <button class="nav-btn active" id="tab-btn-eval"    onclick="showTab('eval')">
+      <i class="ti ti-star"></i> Evaluar
+    </button>
+    <button class="nav-btn" id="tab-btn-history" onclick="showTab('history')">
+      <i class="ti ti-history"></i> Historial
+    </button>
+    <button class="nav-btn" id="tab-btn-admin" style="display:none" onclick="showTab('admin')">
+      <i class="ti ti-settings"></i> Admin
+    </button>
+  </nav>
+
+  <div id="app-content">
+
+    <!-- ============ TAB: EVALUAR ============ -->
+    <div id="tab-eval" class="screen active">
+
+      <!-- Encabezado del foro -->
+      <div class="card" style="padding:18px; margin-bottom:16px">
+        <h2 style="margin-bottom:14px"><i class="ti ti-forms"></i> Datos del foro</h2>
+        <div class="form-grid">
+          <div>
+            <label for="f-fecha">Fecha</label>
+            <input type="date" id="f-fecha" />
+          </div>
+          <div>
+            <label for="f-area">Área</label>
+            <input type="text" id="f-area" placeholder="Ej: Línea A / Ensamble" />
+          </div>
+          <div>
+            <label for="f-nombre">Nombre del foro</label>
+            <input type="text" id="f-nombre" placeholder="Ej: Foro Calidad 01" />
+          </div>
+          <div>
+            <label for="f-nivel">Nivel QRQC</label>
+            <select id="f-nivel" onchange="renderEvalTable()">
+              <option value="N1">N1 — Línea</option>
+              <option value="N2">N2 — Área</option>
+              <option value="N3">N3 — Planta</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de evaluación -->
+      <div class="card" style="padding:18px; margin-bottom:16px" id="eval-card">
+        <h2 style="margin-bottom:14px"><i class="ti ti-table"></i> Tabla de evaluación</h2>
+        <div id="eval-table-container"></div>
+      </div>
+
+      <div class="flex-end">
+        <button onclick="resetForm()"><i class="ti ti-refresh"></i> Limpiar</button>
+        <button class="btn-success" onclick="saveEval()">
+          <i class="ti ti-device-floppy"></i> Guardar evaluación
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ TAB: HISTORIAL ============ -->
+    <div id="tab-history" class="screen">
+      <div class="section-header">
+        <h2><i class="ti ti-history"></i> Historial de evaluaciones</h2>
+        <button class="btn-success" onclick="exportExcel()">
+          <i class="ti ti-file-spreadsheet"></i> Exportar Excel
+        </button>
+      </div>
+
+      <div class="card" style="padding:14px; margin-bottom:14px">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
+          <div style="flex:0 0 140px">
+            <label>Filtrar por nivel</label>
+            <select id="h-nivel" onchange="renderHistory()">
+              <option value="">Todos</option>
+              <option value="N1">N1</option>
+              <option value="N2">N2</option>
+              <option value="N3">N3</option>
+            </select>
+          </div>
+          <div style="flex:1; min-width:150px">
+            <label>Buscar área / foro</label>
+            <input type="text" id="h-search" placeholder="Escribir para filtrar…" oninput="renderHistory()" />
+          </div>
+        </div>
+      </div>
+
+      <div id="history-list"></div>
+    </div>
+
+    <!-- ============ TAB: ADMIN ============ -->
+    <div id="tab-admin" class="screen">
+
+      <div class="alert alert-warning">
+        <i class="ti ti-shield-lock"></i>
+        <strong>Modo administrador</strong> — Cambios en criterios afectan evaluaciones futuras.
+      </div>
+
+      <!-- Editor de criterios -->
+      <div class="card" style="padding:18px; margin-bottom:16px">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px">
+          <h2><i class="ti ti-edit"></i> Criterios de evaluación</h2>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <label style="margin:0">Nivel:</label>
+            <select id="admin-nivel" style="width:auto" onchange="renderAdminCriteria()">
+              <option value="N1">N1 — Línea</option>
+              <option value="N2">N2 — Área</option>
+              <option value="N3">N3 — Planta</option>
+            </select>
+            <button class="btn-primary" onclick="adminAddCat()">
+              <i class="ti ti-folder-plus"></i> Nueva categoría
+            </button>
+          </div>
+        </div>
+        <div id="admin-criteria-list"></div>
+        <div class="flex-end">
+          <button class="btn-success" onclick="adminSaveCriteria()">
+            <i class="ti ti-device-floppy"></i> Guardar cambios
+          </button>
+        </div>
+      </div>
+
+      <!-- Gestión de empleados -->
+      <div class="card" style="padding:18px">
+        <h2 style="margin-bottom:14px"><i class="ti ti-users"></i> Empleados registrados</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:flex-end">
+          <div style="flex:1; min-width:130px">
+            <label>No. de empleado</label>
+            <input type="text" id="new-emp" placeholder="Ej: 1234" />
+          </div>
+          <div style="flex:0 0 130px">
+            <label>Rol</label>
+            <select id="new-role">
+              <option value="user">Usuario</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="addEmployee()">
+            <i class="ti ti-user-plus"></i> Agregar
+          </button>
+        </div>
+        <div id="emp-list" style="max-height:240px; overflow-y:auto"></div>
+      </div>
+
+    </div><!-- /tab-admin -->
+
+  </div><!-- /app-content -->
+</div><!-- /app-wrap -->
+
+<div id="toast"></div>
+
+<!-- =================== DATOS POR DEFECTO =================== -->
+<script>
+/* =====================================================================
+   CRITERIOS PREDETERMINADOS — Edítalos libremente aquí O usa el
+   panel Admin en la app para modificarlos sin tocar el código.
+   ===================================================================== */
+const DEFAULT_CRITERIA = {
+  N1: [
+    { id: 1, cat: "1. Gestión del foro", items: [
+      { id: 11, texto: "El foro se realiza con la frecuencia establecida (diaria)" },
+      { id: 12, texto: "Asistencia completa del equipo multidisciplinario" },
+      { id: 13, texto: "El foro inicia y termina en el tiempo acordado" },
+      { id: 14, texto: "Existe un responsable / facilitador definido" },
+    ]},
+    { id: 2, cat: "2. Detección y registro de problemas", items: [
+      { id: 21, texto: "Los problemas son registrados el mismo día que ocurren" },
+      { id: 22, texto: "Se utiliza el formato estándar de reporte" },
+      { id: 23, texto: "Los datos del problema son claros y completos (qué, dónde, cuándo)" },
+      { id: 24, texto: "Se registra la cantidad de piezas afectadas" },
+    ]},
+    { id: 3, cat: "3. Contención inmediata", items: [
+      { id: 31, texto: "Se define una acción de contención en menos de 1 hora" },
+      { id: 32, texto: "La acción de contención está implementada en el piso" },
+      { id: 33, texto: "Se verifica la efectividad de la contención" },
+    ]},
+    { id: 4, cat: "4. Análisis de causa raíz", items: [
+      { id: 41, texto: "Se aplica metodología de análisis (5 Porqués / Ishikawa)" },
+      { id: 42, texto: "La causa raíz identificada es coherente con el problema" },
+      { id: 43, texto: "El análisis involucra a las personas del proceso" },
+    ]},
+    { id: 5, cat: "5. Seguimiento y cierre", items: [
+      { id: 51, texto: "Las acciones correctivas tienen responsable y fecha definida" },
+      { id: 52, texto: "Existe seguimiento visual del estatus de cada acción" },
+      { id: 53, texto: "Los problemas cerrados tienen evidencia de cierre" },
+      { id: 54, texto: "Se hace revisión de problemas recurrentes" },
+    ]},
+  ],
+
+  N2: [
+    { id: 1, cat: "1. Gestión del foro N2", items: [
+      { id: 11, texto: "El foro N2 se realiza con frecuencia semanal establecida" },
+      { id: 12, texto: "Participación de líderes de área y supervisores" },
+      { id: 13, texto: "Se revisan los problemas escalados de N1" },
+      { id: 14, texto: "Existe agenda estructurada para el foro" },
+    ]},
+    { id: 2, cat: "2. Escalamiento desde N1", items: [
+      { id: 21, texto: "Los criterios de escalamiento N1→N2 están definidos" },
+      { id: 22, texto: "Los problemas escalados tienen la información completa de N1" },
+      { id: 23, texto: "El tiempo de escalamiento respeta el estándar establecido" },
+    ]},
+    { id: 3, cat: "3. Análisis y solución", items: [
+      { id: 31, texto: "Se realiza análisis profundo con herramientas (8D, A3, etc.)" },
+      { id: 32, texto: "Se involucra a ingeniería / calidad en el análisis" },
+      { id: 33, texto: "Las soluciones propuestas atacan la causa raíz" },
+      { id: 34, texto: "Se validan las soluciones antes de implementar" },
+    ]},
+    { id: 4, cat: "4. Indicadores y métricas", items: [
+      { id: 41, texto: "Se revisan los KPI de calidad del área en el foro" },
+      { id: 42, texto: "Existe tendencia visible de mejora en indicadores" },
+      { id: 43, texto: "Se comparan resultados vs. objetivos establecidos" },
+    ]},
+    { id: 5, cat: "5. Gestión del conocimiento", items: [
+      { id: 51, texto: "Las lecciones aprendidas se documentan y difunden" },
+      { id: 52, texto: "Se actualizan los estándares de trabajo cuando aplica" },
+      { id: 53, texto: "Existe base de conocimiento de problemas resueltos" },
+    ]},
+  ],
+
+  N3: [
+    { id: 1, cat: "1. Liderazgo y gobernanza", items: [
+      { id: 11, texto: "La dirección / gerencia participa en el foro N3" },
+      { id: 12, texto: "Existe un sistema de gobierno QRQC documentado" },
+      { id: 13, texto: "Los roles y responsabilidades en QRQC están definidos" },
+    ]},
+    { id: 2, cat: "2. Escalamiento N2→N3", items: [
+      { id: 21, texto: "Los criterios de escalamiento N2→N3 están claros y aplicados" },
+      { id: 22, texto: "La información de N2 llega completa al foro N3" },
+      { id: 23, texto: "El foro N3 se realiza con la periodicidad establecida" },
+    ]},
+    { id: 3, cat: "3. Análisis sistémico", items: [
+      { id: 31, texto: "Se identifican problemas sistémicos / transversales a varias áreas" },
+      { id: 32, texto: "Se utilizan herramientas avanzadas de análisis (FMEA, DOE, etc.)" },
+      { id: 33, texto: "Existe coordinación cross-funcional en la solución" },
+      { id: 34, texto: "Se monitorean proyectos de mejora a largo plazo" },
+    ]},
+    { id: 4, cat: "4. Indicadores planta", items: [
+      { id: 41, texto: "Se revisan indicadores de toda la planta (PPM, scrap, retrabajos)" },
+      { id: 42, texto: "Los objetivos están alineados a la estrategia del negocio" },
+      { id: 43, texto: "Existe plan de acción para indicadores fuera de objetivo" },
+      { id: 44, texto: "Se hace benchmarking con otras plantas / divisiones" },
+    ]},
+    { id: 5, cat: "5. Cultura y mejora continua", items: [
+      { id: 51, texto: "El QRQC está integrado en la cultura de la planta" },
+      { id: 52, texto: "Existe plan de entrenamiento y certificación en QRQC" },
+      { id: 53, texto: "Se mide el nivel de madurez QRQC periódicamente" },
+      { id: 54, texto: "Se comparten mejores prácticas con otras plantas" },
+    ]},
+  ]
+};
+
+/* =====================================================================
+   EMPLEADOS POR DEFECTO
+   Clave  = número de empleado (string)
+   role   = "admin" | "user"
+   ===================================================================== */
+const DEFAULT_EMPLOYEES = {
+  "9999": { role: "admin", name: "Admin Principal" },
+  "1001": { role: "user",  name: "Empleado Demo" },
+};
+</script>
+
+<!-- =================== LÓGICA =================== -->
+<script>
+/* ---- BASE DE DATOS LOCAL (localStorage) ---- */
+let DB = { employees: {}, criteria: {}, evaluations: [], nextId: 1 };
+
+function loadDB() {
+  try {
+    const s = localStorage.getItem('qrqc_db_v2');
+    if (s) { Object.assign(DB, JSON.parse(s)); }
+    else    { DB.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
+              DB.criteria  = JSON.parse(JSON.stringify(DEFAULT_CRITERIA)); }
+  } catch(e) {
+    DB.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
+    DB.criteria  = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
+  }
+}
+function saveDB() {
+  try { localStorage.setItem('qrqc_db_v2', JSON.stringify(DB)); } catch(e) {}
+}
+loadDB();
+
+/* ---- SESSION ---- */
+let currentUser = null;
+let evalScores  = {};
+let editCrit    = null;   // copia de trabajo para admin
+
+/* ---- TOAST ---- */
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  const colors = { info:'#1a6ef5', success:'#16a34a', danger:'#dc2626', warning:'#d97706' };
+  el.style.background = colors[type] || colors.info;
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ---- LOGIN ---- */
+function doLogin() {
+  const emp = document.getElementById('emp-input').value.trim();
+  if (!emp || !DB.employees[emp]) {
+    document.getElementById('login-error').style.display = 'block'; return;
+  }
+  currentUser = { id: emp, ...DB.employees[emp] };
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-wrap').style.display  = 'none';
+  document.getElementById('app-wrap').style.display    = 'block';
+  document.getElementById('emp-tag').textContent       = 'Emp: ' + emp;
+
+  if (currentUser.role === 'admin') {
+    document.getElementById('btn-admin-hdr').style.display  = '';
+    document.getElementById('tab-btn-admin').style.display  = '';
+  }
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  renderEvalTable();
+  showTab('eval');
+}
+
+function doLogout() {
+  currentUser = null; evalScores = {};
+  document.getElementById('app-wrap').style.display    = 'none';
+  document.getElementById('login-wrap').style.display  = 'flex';
+  document.getElementById('emp-input').value = '';
+  document.getElementById('btn-admin-hdr').style.display = 'none';
+  document.getElementById('tab-btn-admin').style.display = 'none';
+}
+
+/* ---- TABS ---- */
+function showTab(name) {
+  ['eval','history','admin'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+    const btn = document.getElementById('tab-btn-' + t);
+    if (btn) btn.classList.toggle('active', t === name);
+  });
+  if (name === 'history') renderHistory();
+  if (name === 'admin')   { renderAdminCriteria(); renderEmpList(); }
+}
+
+/* ========================================================
+   MÓDULO: EVALUAR
+   ======================================================== */
+function renderEvalTable() {
+  const nivel = document.getElementById('f-nivel').value;
+  const cats  = DB.criteria[nivel] || [];
+  evalScores  = {};
+  let totalMax = 0;
+  let html = '';
+
+  cats.forEach(cat => {
+    html += `<div class="eval-cat-title">${cat.cat}</div>
+    <table class="eval-table">
+      <thead><tr>
+        <th>Criterio de evaluación</th>
+        <th style="width:200px;text-align:center">Puntuación (0–5)</th>
+        <th style="width:50px">Pts</th>
+      </tr></thead><tbody>`;
+
+    cat.items.forEach((item, i) => {
+      totalMax += 5;
+      html += `<tr>
+        <td>${item.texto}</td>
+        <td>
+          <div class="score-cell">
+            <input type="range" min="0" max="5" step="1" value="0"
+              id="rng_${nivel}_${item.id}"
+              oninput="updateScore('${nivel}','${item.id}',this.value)" />
+            <span class="score-lbl" id="lbl_${nivel}_${item.id}">0</span>
+          </div>
+        </td>
+        <td id="pts_${nivel}_${item.id}" style="color:var(--gray-400)">0</td>
+      </tr>`;
+    });
+    html += `</tbody></table><div style="margin-bottom:14px"></div>`;
+  });
+
+  html += `<div class="total-bar">
+    <div>
+      <div style="font-size:13px;color:var(--gray-500);margin-bottom:2px">Total obtenido</div>
+      <span class="total-score" id="total-pts">0</span>
+      <span class="total-max" id="total-max"> / ${totalMax} pts</span>
+    </div>
+    <div id="pct-pill" class="pct-pill" style="background:var(--gray-100);color:var(--gray-500)">0%</div>
+  </div>`;
+
+  document.getElementById('eval-table-container').innerHTML = html;
+}
+
+function updateScore(nivel, itemId, val) {
+  const v   = parseInt(val);
+  const key = nivel + '_' + itemId;
+  evalScores[key] = v;
+  document.getElementById('lbl_' + key).textContent = v;
+  const ptsEl = document.getElementById('pts_' + key);
+  ptsEl.textContent = v;
+  const colors = v >= 5 ? '#16a34a' : v >= 3 ? '#1a6ef5' : v >= 1 ? '#d97706' : '#94a3b8';
+  ptsEl.style.color = colors;
+  calcTotal(nivel);
+}
+
+function calcTotal(nivel) {
+  const cats = DB.criteria[nivel] || [];
+  let total = 0, max = 0;
+  cats.forEach(c => c.items.forEach(i => {
+    max += 5;
+    total += evalScores[nivel + '_' + i.id] || 0;
+  }));
+  const pct = max > 0 ? Math.round(total / max * 100) : 0;
+  document.getElementById('total-pts').textContent = total;
+  const pill = document.getElementById('pct-pill');
+  pill.textContent = pct + '%';
+  if      (pct >= 80) { pill.style.background = '#dcfce7'; pill.style.color = '#15803d'; }
+  else if (pct >= 60) { pill.style.background = '#e8f0fe'; pill.style.color = '#1a6ef5'; }
+  else if (pct >= 40) { pill.style.background = '#fef3c7'; pill.style.color = '#92400e'; }
+  else                { pill.style.background = '#fee2e2'; pill.style.color = '#dc2626'; }
+}
+
+function resetForm() {
+  document.getElementById('f-area').value   = '';
+  document.getElementById('f-nombre').value = '';
+  document.getElementById('f-fecha').value  = new Date().toISOString().split('T')[0];
+  evalScores = {};
+  renderEvalTable();
+}
+
+function saveEval() {
+  const fecha  = document.getElementById('f-fecha').value;
+  const area   = document.getElementById('f-area').value.trim();
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const nivel  = document.getElementById('f-nivel').value;
+
+  if (!fecha || !area || !nombre) {
+    toast('Completa Fecha, Área y Nombre del foro', 'danger'); return;
+  }
+
+  const cats   = DB.criteria[nivel] || [];
+  let total = 0, max = 0;
+  const detail = [];
+
+  cats.forEach(cat => {
+    const catRow = { cat: cat.cat, items: [] };
+    cat.items.forEach(item => {
+      const score = evalScores[nivel + '_' + item.id] || 0;
+      max += 5; total += score;
+      catRow.items.push({ texto: item.texto, score });
+    });
+    detail.push(catRow);
+  });
+
+  const pct = max > 0 ? Math.round(total / max * 100) : 0;
+  DB.evaluations.unshift({
+    id: DB.nextId++, fecha, area, nombre, nivel,
+    total, max, pct, detail,
+    empleado: currentUser.id,
+    createdAt: new Date().toISOString()
+  });
+  saveDB();
+  toast('✓ Evaluación guardada — ' + total + '/' + max + ' pts (' + pct + '%)', 'success');
+}
+
+/* ========================================================
+   MÓDULO: HISTORIAL
+   ======================================================== */
+function renderHistory() {
+  const fnivel = document.getElementById('h-nivel').value;
+  const ftext  = document.getElementById('h-search').value.toLowerCase();
+  const list   = DB.evaluations.filter(e => {
+    if (fnivel && e.nivel !== fnivel) return false;
+    if (ftext  && !(e.area.toLowerCase().includes(ftext) || e.nombre.toLowerCase().includes(ftext))) return false;
+    return true;
+  });
+
+  if (!list.length) {
+    document.getElementById('history-list').innerHTML =
+      '<div class="empty-state"><i class="ti ti-clipboard-off"></i>No hay evaluaciones registradas.</div>';
+    return;
+  }
+
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  let html = '';
+
+  list.forEach(e => {
+    const pctColor = e.pct >= 80 ? '#16a34a' : e.pct >= 60 ? '#1a6ef5' : e.pct >= 40 ? '#d97706' : '#dc2626';
+    const chips = e.detail.map(cat =>
+      cat.items.map(it => {
+        const cls = it.score >= 4 ? 'chip-hi' : it.score >= 2 ? 'chip-mid' : it.score >= 1 ? 'chip-lo' : 'chip-zero';
+        return `<span class="score-chip ${cls}">${it.score}/5</span>`;
+      }).join('')
+    ).join('');
+
+    html += `<div class="hist-card">
+      <div class="hrow">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-${e.nivel.toLowerCase()}">${e.nivel}</span>
+          <span style="font-weight:600;font-size:14px;color:var(--gray-800)">${e.nombre}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:24px;font-weight:600;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span>
+          <span style="font-size:12px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.max}</span>
+          ${isAdmin ? `<button class="btn-ghost btn-danger" style="padding:3px 7px;color:var(--red);border-color:#fca5a5" onclick="deleteEval(${e.id})"><i class="ti ti-trash"></i></button>` : ''}
+        </div>
+      </div>
+      <div class="hmeta">
+        <span><i class="ti ti-calendar"></i>${e.fecha}</span>
+        <span><i class="ti ti-building"></i>${e.area}</span>
+        <span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span>
+      </div>
+      <div class="score-chips">${chips}</div>
+    </div>`;
+  });
+
+  document.getElementById('history-list').innerHTML = html;
+}
+
+function deleteEval(id) {
+  if (!confirm('¿Eliminar esta evaluación?')) return;
+  DB.evaluations = DB.evaluations.filter(e => e.id !== id);
+  saveDB(); renderHistory();
+  toast('Evaluación eliminada', 'warning');
+}
+
+/* ========================================================
+   MÓDULO: EXPORTAR EXCEL
+   ======================================================== */
+function exportExcel() {
+  const fnivel = document.getElementById('h-nivel').value;
+  const ftext  = document.getElementById('h-search').value.toLowerCase();
+  const list   = DB.evaluations.filter(e => {
+    if (fnivel && e.nivel !== fnivel) return false;
+    if (ftext  && !(e.area.toLowerCase().includes(ftext) || e.nombre.toLowerCase().includes(ftext))) return false;
+    return true;
+  });
+
+  if (!list.length) { toast('No hay evaluaciones para exportar', 'danger'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  /* Hoja 1: Resumen */
+  const sumData = [['ID','Fecha','Nivel','Área','Nombre del Foro','Puntos Obtenidos','Puntos Máximos','Porcentaje','Empleado','Fecha Registro']];
+  list.forEach(e => sumData.push([e.id, e.fecha, e.nivel, e.area, e.nombre, e.total, e.max, e.pct + '%', e.empleado, e.createdAt]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumData), 'Resumen');
+
+  /* Hoja 2: Detalle */
+  const detData = [['ID','Fecha','Nivel','Área','Foro','Categoría','Criterio','Puntuación (0-5)','Máximo']];
+  list.forEach(e => e.detail.forEach(cat => cat.items.forEach(it =>
+    detData.push([e.id, e.fecha, e.nivel, e.area, e.nombre, cat.cat, it.texto, it.score, 5])
+  )));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detData), 'Detalle');
+
+  XLSX.writeFile(wb, 'QRQC_Evaluaciones_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  toast('Excel generado correctamente', 'success');
+}
+
+/* ========================================================
+   MÓDULO: ADMIN — CRITERIOS
+   ======================================================== */
+function renderAdminCriteria() {
+  const nivel = document.getElementById('admin-nivel').value;
+  editCrit = JSON.parse(JSON.stringify(DB.criteria[nivel] || []));
+  buildAdminCriteriaHTML();
+}
+
+function buildAdminCriteriaHTML() {
+  let html = '';
+  editCrit.forEach((cat, ci) => {
+    html += `<div class="crit-block">
+      <div class="crit-block-head">
+        <i class="ti ti-folder" style="color:var(--blue)"></i>
+        <input type="text" value="${escHtml(cat.cat)}" onchange="editCrit[${ci}].cat = this.value" />
+        <button class="btn-ghost" style="color:var(--red);padding:3px 7px" onclick="adminRemoveCat(${ci})">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+      <div class="crit-block-body">`;
+    cat.items.forEach((item, ii) => {
+      html += `<div class="crit-item-row">
+        <span>${ii + 1}.</span>
+        <input type="text" value="${escHtml(item.texto)}" onchange="editCrit[${ci}].items[${ii}].texto = this.value" />
+        <button class="btn-ghost" style="color:var(--red);padding:2px 6px" onclick="adminRemoveItem(${ci},${ii})">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>`;
+    });
+    html += `<button style="margin-top:4px;font-size:12px" onclick="adminAddItem(${ci})">
+        <i class="ti ti-plus"></i> Agregar criterio
+      </button></div></div>`;
+  });
+  document.getElementById('admin-criteria-list').innerHTML = html;
+}
+
+function adminAddCat() {
+  const newId = Date.now();
+  editCrit.push({ id: newId, cat: 'Nueva categoría', items: [{ id: newId + 1, texto: 'Nuevo criterio' }] });
+  buildAdminCriteriaHTML();
+}
+function adminRemoveCat(ci)        { editCrit.splice(ci, 1); buildAdminCriteriaHTML(); }
+function adminAddItem(ci)          { editCrit[ci].items.push({ id: Date.now(), texto: 'Nuevo criterio' }); buildAdminCriteriaHTML(); }
+function adminRemoveItem(ci, ii)   { editCrit[ci].items.splice(ii, 1); buildAdminCriteriaHTML(); }
+
+function adminSaveCriteria() {
+  const nivel = document.getElementById('admin-nivel').value;
+  DB.criteria[nivel] = JSON.parse(JSON.stringify(editCrit));
+  saveDB();
+  toast('✓ Criterios de ' + nivel + ' guardados', 'success');
+  renderEvalTable();
+}
+
+/* ========================================================
+   MÓDULO: ADMIN — EMPLEADOS
+   ======================================================== */
+function renderEmpList() {
+  let html = '';
+  Object.entries(DB.employees).sort().forEach(([id, emp]) => {
+    html += `<div class="emp-row">
+      <span class="emp-num">${id}</span>
+      <span class="badge badge-${emp.role}">${emp.role}</span>
+      <span style="flex:1;color:var(--gray-500);font-size:12px">${emp.name || ''}</span>
+      <button class="btn-ghost" style="color:var(--red);padding:3px 7px" onclick="removeEmployee('${id}')" ${id === '9999' ? 'disabled' : ''}>
+        <i class="ti ti-trash"></i>
+      </button>
+    </div>`;
+  });
+  document.getElementById('emp-list').innerHTML = html || '<p class="txt-muted" style="padding:8px">Sin empleados</p>';
+}
+
+function addEmployee() {
+  const id   = document.getElementById('new-emp').value.trim();
+  const role = document.getElementById('new-role').value;
+  if (!id) { toast('Ingresa un número de empleado', 'danger'); return; }
+  if (DB.employees[id]) { toast('Ese número ya existe', 'warning'); return; }
+  DB.employees[id] = { role, name: 'Empleado ' + id };
+  saveDB(); renderEmpList();
+  document.getElementById('new-emp').value = '';
+  toast('Empleado ' + id + ' agregado', 'success');
+}
+
+function removeEmployee(id) {
+  if (id === '9999') { toast('No se puede eliminar al admin principal', 'danger'); return; }
+  if (!confirm('¿Eliminar empleado ' + id + '?')) return;
+  delete DB.employees[id];
+  saveDB(); renderEmpList();
+  toast('Empleado ' + id + ' eliminado', 'warning');
+}
+
+/* ---- UTIL ---- */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
