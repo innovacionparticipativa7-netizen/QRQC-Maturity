@@ -1,1095 +1,642 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Evaluación Foros QRQC</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css" />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<!-- =====================================================================
-     FIREBASE CONFIG — Reemplaza con tus datos de Firebase Console
-     ===================================================================== -->
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAxgVTBhEcgv38cFX4vLJfDKiMaZXYNKIA",
-  authDomain: "qrqc-maturity.firebaseapp.com",
-  projectId: "qrqc-maturity",
-  storageBucket: "qrqc-maturity.firebasestorage.app",
-  messagingSenderId: "63981350477",
-  appId: "1:63981350477:web:29ba416796dbd74313b604",
-  measurementId: "G-D12ZE8X0YG"
-};
-
-  const app = initializeApp(firebaseConfig);
-  window.db = getFirestore(app);
-</script>
-
-
 <style>
-/* ===== RESET & BASE ===== */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 14px; }
-body {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  background: #f0f2f5;
-  color: #1a1f2e;
-  min-height: 100vh;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:#eef1f6;color:#1a1f2e;min-height:100vh}
+:root{
+  --blue:#1a6ef5;--blue-l:#e8f0fe;--blue-d:#0d47b8;
+  --green:#16a34a;--green-l:#dcfce7;
+  --amber:#d97706;--amber-l:#fef3c7;
+  --red:#dc2626;--red-l:#fee2e2;
+  --gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;
+  --gray-300:#cbd5e1;--gray-400:#94a3b8;--gray-500:#64748b;
+  --gray-600:#475569;--gray-700:#334155;--gray-800:#1e293b;
+  --white:#fff;
+  --basico:#c0392b;--bronce:#b5651d;--plata:#7f8c8d;--oro:#b8860b;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 4px rgba(0,0,0,.09);
 }
-
-/* ===== VARIABLES ===== */
-:root {
-  --blue:       #1a6ef5;
-  --blue-light: #e8f0fe;
-  --blue-dark:  #0d47b8;
-  --green:      #16a34a;
-  --green-light:#dcfce7;
-  --amber:      #d97706;
-  --amber-light:#fef3c7;
-  --red:        #dc2626;
-  --red-light:  #fee2e2;
-  --gray-50:    #f8fafc;
-  --gray-100:   #f1f5f9;
-  --gray-200:   #e2e8f0;
-  --gray-300:   #cbd5e1;
-  --gray-400:   #94a3b8;
-  --gray-500:   #64748b;
-  --gray-600:   #475569;
-  --gray-700:   #334155;
-  --gray-800:   #1e293b;
-  --white:      #ffffff;
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.10);
-  --radius:     10px;
-  --radius-sm:  6px;
-}
-
-/* ===== TYPOGRAPHY ===== */
-h1 { font-size: 1.5rem; font-weight: 600; }
-h2 { font-size: 1.15rem; font-weight: 600; }
-h3 { font-size: 1rem; font-weight: 600; }
-p  { line-height: 1.6; }
-
-/* ===== BUTTONS ===== */
-button {
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-  padding: 7px 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: opacity .15s, transform .1s;
-  background: var(--white);
-  color: var(--gray-700);
-  border-color: var(--gray-300);
-}
-button:hover { opacity: .85; }
-button:active { transform: scale(.97); }
-button.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue-dark); }
-button.btn-success { background: var(--green); color: #fff; border-color: #15803d; }
-button.btn-danger  { background: var(--red);   color: #fff; border-color: #b91c1c; }
-button.btn-warning { background: var(--amber); color: #fff; border-color: #b45309; }
-button.btn-ghost   { background: transparent; border-color: transparent; color: var(--gray-500); }
-button:disabled    { opacity: .4; cursor: not-allowed; }
-
-/* ===== INPUTS ===== */
-input[type="text"],
-input[type="date"],
-input[type="password"],
-select,
-textarea {
-  font-family: inherit;
-  font-size: 13px;
-  padding: 7px 10px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
-  background: var(--white);
-  color: var(--gray-800);
-  outline: none;
-  transition: border-color .15s;
-  width: 100%;
-}
-input:focus, select:focus, textarea:focus { border-color: var(--blue); }
-label { font-size: 12px; font-weight: 500; color: var(--gray-500); display: block; margin-bottom: 4px; }
-
-/* ===== RANGE SLIDER ===== */
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--gray-200);
-  outline: none;
-  border: none;
-  padding: 0;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: var(--blue);
-  cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px var(--blue);
-}
-input[type="range"]::-moz-range-thumb {
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: var(--blue);
-  cursor: pointer;
-  border: 2px solid #fff;
-}
-
-/* ===== CARD ===== */
-.card {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-/* ===== BADGE ===== */
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .3px;
-}
-.badge-n1  { background: var(--blue-light);  color: var(--blue-dark); }
-.badge-n2  { background: var(--green-light); color: #15803d; }
-.badge-n3  { background: var(--amber-light); color: #92400e; }
-.badge-admin { background: #fce7f3; color: #9d174d; }
-.badge-user  { background: var(--gray-100);  color: var(--gray-600); }
-
-/* ===== SCREEN ===== */
-.screen { display: none; }
-.screen.active { display: block; }
-
-/* ===== LOGIN ===== */
-#login-wrap {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1a2b4a 0%, #1a6ef5 100%);
-  padding: 1rem;
-}
-#login-box {
-  background: var(--white);
-  border-radius: 14px;
-  padding: 2.5rem;
-  width: 100%;
-  max-width: 360px;
-  box-shadow: var(--shadow-md);
-  text-align: center;
-}
-#login-box .logo {
-  width: 56px; height: 56px;
-  background: var(--blue-light);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 1.25rem;
-}
-#login-box .logo i { font-size: 26px; color: var(--blue); }
-#login-box h1 { font-size: 1.3rem; color: var(--gray-800); margin-bottom: 4px; }
-#login-box p  { font-size: 12px; color: var(--gray-400); margin-bottom: 1.75rem; }
-#login-error  { color: var(--red); font-size: 12px; margin-top: 8px; display: none; }
-#login-hint   { font-size: 11px; color: var(--gray-400); margin-top: 1.25rem; }
-
-/* ===== HEADER ===== */
-#app-header {
-  background: #1a2b4a;
-  color: #fff;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 54px;
-  position: sticky; top: 0; z-index: 200;
-}
-#app-header .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
-#app-header .brand i { font-size: 20px; color: #60a5fa; }
-#app-header .hright { display: flex; align-items: center; gap: 8px; }
-#app-header .emp-tag {
-  font-size: 11px; font-family: 'IBM Plex Mono', monospace;
-  background: rgba(255,255,255,.12); border-radius: 4px;
-  padding: 3px 8px; color: #bfdbfe;
-}
-
-/* ===== NAVBAR ===== */
-#app-nav {
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-200);
-  display: flex; gap: 0;
-  padding: 0 16px;
-  overflow-x: auto;
-}
-.nav-btn {
-  border: none; background: transparent;
-  color: var(--gray-500); font-size: 13px; font-weight: 500;
-  padding: 12px 14px;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  gap: 6px;
-  white-space: nowrap;
-  transition: color .15s, border-color .15s;
-}
-.nav-btn:hover { color: var(--blue); background: transparent; }
-.nav-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
-
-/* ===== CONTENT ===== */
-#app-content { padding: 20px; max-width: 960px; margin: 0 auto; }
-
-/* ===== SECTION TITLE ===== */
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 10px;
-  margin-bottom: 16px;
-}
-.section-header h2 { color: var(--gray-800); }
-
-/* ===== FORM GRID ===== */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-}
-
-/* ===== EVAL TABLE ===== */
-.eval-cat-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .6px;
-  color: var(--blue);
-  padding: 8px 0 6px;
-  border-bottom: 1px solid var(--gray-200);
-  margin-bottom: 4px;
-}
-.eval-table { width: 100%; border-collapse: collapse; }
-.eval-table th {
-  font-size: 11px; font-weight: 500; color: var(--gray-400);
-  text-align: left; padding: 5px 8px;
-}
-.eval-table th:last-child, .eval-table th:nth-last-child(2) { text-align: center; }
-.eval-table td { padding: 6px 8px; font-size: 13px; color: var(--gray-700); }
-.eval-table tr:nth-child(even) td { background: var(--gray-50); }
-.eval-table td:last-child { text-align: center; font-weight: 600; min-width: 40px; }
-.score-cell { display: flex; align-items: center; gap: 8px; min-width: 160px; }
-.score-cell input[type="range"] { flex: 1; }
-.score-lbl {
-  font-size: 13px; font-weight: 600; min-width: 18px;
-  text-align: right; font-family: 'IBM Plex Mono', monospace;
-  color: var(--gray-700);
-}
-
-/* ===== TOTAL BAR ===== */
-.total-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-  border-top: 2px solid var(--gray-200);
-  margin-top: 12px; padding-top: 14px;
-}
-.total-score { font-size: 28px; font-weight: 600; color: var(--blue); font-family: 'IBM Plex Mono', monospace; }
-.total-max   { font-size: 14px; color: var(--gray-400); }
-.pct-pill {
-  padding: 6px 16px; border-radius: 20px;
-  font-size: 14px; font-weight: 600;
-  font-family: 'IBM Plex Mono', monospace;
-  transition: background .3s, color .3s;
-}
-
-/* ===== HISTORY CARD ===== */
-.hist-card {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  margin-bottom: 10px;
-  box-shadow: var(--shadow-sm);
-}
-.hist-card .hrow {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px; margin-bottom: 6px;
-}
-.hist-card .hmeta {
-  font-size: 11px; color: var(--gray-400);
-  display: flex; gap: 12px; flex-wrap: wrap;
-}
-.hist-card .hmeta span { display: flex; align-items: center; gap: 4px; }
-.score-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.score-chip {
-  font-size: 10px; font-weight: 600;
-  padding: 2px 6px; border-radius: 3px;
-  font-family: 'IBM Plex Mono', monospace;
-}
-.chip-hi  { background: var(--green-light); color: #15803d; }
-.chip-mid { background: var(--blue-light);  color: var(--blue-dark); }
-.chip-lo  { background: var(--amber-light); color: #92400e; }
-.chip-zero{ background: var(--red-light);   color: var(--red); }
-
-/* ===== ADMIN CRITERIA ===== */
-.crit-block {
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-.crit-block-head {
-  background: var(--gray-50);
-  padding: 8px 12px;
-  display: flex; align-items: center; gap: 8px;
-}
-.crit-block-head input {
-  flex: 1; background: transparent; border: none;
-  font-weight: 600; font-size: 13px; color: var(--gray-700);
-  outline: none; padding: 0;
-}
-.crit-block-body { padding: 10px 12px; }
-.crit-item-row {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 6px;
-}
-.crit-item-row span { font-size: 11px; color: var(--gray-400); min-width: 18px; }
-.crit-item-row input { flex: 1; font-size: 12px; }
-
-/* ===== EMP LIST ===== */
-.emp-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--gray-100);
-  font-size: 13px;
-}
-.emp-num { font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: var(--gray-800); min-width: 80px; }
-
-/* ===== ALERTS ===== */
-.alert {
-  padding: 10px 14px; border-radius: var(--radius-sm);
-  font-size: 13px; display: flex; align-items: center; gap: 8px;
-  margin-bottom: 14px;
-}
-.alert-info    { background: var(--blue-light);  color: var(--blue-dark); border: 1px solid #bfdbfe; }
-.alert-success { background: var(--green-light); color: #15803d;          border: 1px solid #bbf7d0; }
-.alert-warning { background: var(--amber-light); color: #92400e;          border: 1px solid #fde68a; }
-.alert-danger  { background: var(--red-light);   color: var(--red);       border: 1px solid #fca5a5; }
-
-/* ===== TOAST ===== */
-#toast {
-  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
-  padding: 12px 20px; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 500;
-  background: var(--gray-800); color: #fff;
-  box-shadow: var(--shadow-md);
-  transform: translateY(80px); opacity: 0;
-  transition: transform .25s, opacity .25s;
-  pointer-events: none;
-}
-#toast.show { transform: translateY(0); opacity: 1; }
-
-/* ===== MISC ===== */
-.sep { border: none; border-top: 1px solid var(--gray-200); margin: 14px 0; }
-.txt-muted { color: var(--gray-400); font-size: 12px; }
-.empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray-400); }
-.empty-state i { font-size: 40px; display: block; margin-bottom: 10px; }
-.flex-end { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+button{font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;border-radius:var(--radius-sm);border:1px solid transparent;padding:6px 13px;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s,transform .1s;background:var(--white);color:var(--gray-700);border-color:var(--gray-300)}
+button:hover{opacity:.85}button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-p{background:var(--blue);color:#fff;border-color:var(--blue-d)}
+.btn-s{background:var(--green);color:#fff;border-color:#15803d}
+.btn-d{background:var(--red);color:#fff;border-color:#b91c1c}
+.btn-g{background:transparent;border-color:transparent;color:var(--gray-500)}
+input[type=text],input[type=date],select,textarea{font-family:inherit;font-size:12px;padding:6px 9px;border:1px solid var(--gray-300);border-radius:var(--radius-sm);background:var(--white);color:var(--gray-800);outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus{border-color:var(--blue)}
+label{font-size:11px;font-weight:500;color:var(--gray-500);display:block;margin-bottom:3px}
+.card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:var(--shadow)}
+.screen{display:none}.screen.active{display:block}
+#login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a2b4a 0%,#1a6ef5 100%);padding:1rem}
+#login-box{background:var(--white);border-radius:14px;padding:2.2rem;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.18);text-align:center}
+.login-logo{width:52px;height:52px;background:var(--blue-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem}
+.login-logo i{font-size:24px;color:var(--blue)}
+#login-box h1{font-size:1.25rem;color:var(--gray-800);margin-bottom:3px}
+#login-box p{font-size:11px;color:var(--gray-400);margin-bottom:1.5rem}
+#login-error{color:var(--red);font-size:11px;margin-top:7px;display:none}
+#login-hint{font-size:10px;color:var(--gray-400);margin-top:1rem}
+#app-header{background:#1a2b4a;color:#fff;padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:200}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.brand i{font-size:19px;color:#60a5fa}
+.emp-tag{font-size:10px;font-family:'IBM Plex Mono',monospace;background:rgba(255,255,255,.12);border-radius:4px;padding:3px 8px;color:#bfdbfe}
+.hright{display:flex;align-items:center;gap:7px}
+#app-nav{background:var(--white);border-bottom:1px solid var(--gray-200);display:flex;padding:0 14px;overflow-x:auto}
+.nav-btn{border:none;background:transparent;color:var(--gray-500);font-size:12px;font-weight:500;padding:11px 13px;border-bottom:2px solid transparent;border-radius:0;gap:5px;white-space:nowrap;transition:color .15s,border-color .15s}
+.nav-btn:hover{color:var(--blue);background:transparent}
+.nav-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+#app-content{padding:16px;max-width:1100px;margin:0 auto}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.sec-hdr h2{font-size:14px;color:var(--gray-800)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.matrix-wrap{overflow-x:auto}
+table.matrix{width:100%;border-collapse:collapse;font-size:11.5px}
+table.matrix th,table.matrix td{border:1px solid var(--gray-200);padding:6px 8px;vertical-align:middle}
+table.matrix thead th{background:#1a2b4a;color:#fff;font-weight:600;text-align:center;font-size:11px;white-space:nowrap}
+td.sec-label{font-weight:600;font-size:11px;line-height:1.35;width:110px;min-width:100px;text-align:center;padding:6px 6px}
+td.sec-label.s-basico{background:var(--basico);color:#fff}
+td.sec-label.s-bronce{background:var(--bronce);color:#fff}
+td.sec-label.s-plata{background:var(--plata);color:#fff}
+td.sec-label.s-oro{background:var(--oro);color:#fff}
+td.criterion-text{color:var(--gray-700);line-height:1.4}
+td.criterion-text.odd{background:#fafbfc}
+td.chk-cell{text-align:center;min-width:34px;cursor:pointer;user-select:none}
+td.chk-cell input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--blue)}
+td.sec-score{text-align:center;min-width:44px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+td.sec-score.score-0{color:var(--gray-300)}
+td.sec-score.score-ok{color:var(--green)}
+tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;text-align:center;padding:8px}
+tr.level-row td{font-weight:600;font-size:11px;text-align:center;padding:6px 8px}
+tr.level-row.l-basico td{background:#fdecea;color:var(--basico)}
+tr.level-row.l-bronce td{background:#fdf3e3;color:var(--bronce)}
+.hist-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:13px 16px;margin-bottom:9px;box-shadow:var(--shadow)}
+.hist-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px;margin-bottom:5px}
+.hist-meta{font-size:10px;color:var(--gray-400);display:flex;gap:10px;flex-wrap:wrap}
+.hist-meta span{display:flex;align-items:center;gap:3px}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.b-basico{background:#fdecea;color:var(--basico)}
+.b-bronce{background:#fdf3e3;color:var(--bronce)}
+.b-plata{background:#f1f5f9;color:var(--plata)}
+.b-oro{background:#fefce8;color:var(--oro)}
+.b-admin{background:#fce7f3;color:#9d174d}
+.b-user{background:var(--gray-100);color:var(--gray-600)}
+.sec-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.sec-chip{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.chip-ok{background:var(--green-l);color:#15803d}
+.chip-no{background:var(--red-l);color:var(--red)}
+.crit-block{border:1px solid var(--gray-200);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px}
+.crit-head{background:var(--gray-50);padding:7px 11px;display:flex;align-items:center;gap:7px}
+.crit-head input{flex:1;background:transparent;border:none;font-weight:600;font-size:12px;color:var(--gray-700);outline:none;padding:0}
+.crit-body{padding:8px 11px}
+.crit-item-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.crit-item-row span{font-size:10px;color:var(--gray-400);min-width:16px}
+.crit-item-row input{flex:1;font-size:11px}
+.emp-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:12px}
+.emp-num{font-family:'IBM Plex Mono',monospace;font-weight:500;color:var(--gray-800);min-width:70px}
+.alert{padding:9px 13px;border-radius:var(--radius-sm);font-size:12px;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.a-info{background:var(--blue-l);color:var(--blue-d);border:1px solid #bfdbfe}
+.a-warn{background:var(--amber-l);color:#92400e;border:1px solid #fde68a}
+.a-success{background:var(--green-l);color:#15803d;border:1px solid #bbf7d0}
+#toast{position:fixed;bottom:22px;right:22px;z-index:9999;padding:11px 18px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;background:var(--gray-800);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.18);transform:translateY(80px);opacity:0;transition:transform .25s,opacity .25s;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--gray-400)}
+.empty i{font-size:36px;display:block;margin-bottom:8px}
+.sep{border:none;border-top:1px solid var(--gray-200);margin:12px 0}
 </style>
 </head>
 <body>
 
-<!-- =================== LOGIN =================== -->
 <div id="login-wrap">
   <div id="login-box">
-    <div class="logo"><i class="ti ti-clipboard-check"></i></div>
+    <div class="login-logo"><i class="ti ti-clipboard-check"></i></div>
     <h1>Evaluación QRQC</h1>
-    <p>Foros de Calidad &nbsp;·&nbsp; N1 &nbsp;·&nbsp; N2 &nbsp;·&nbsp; N3</p>
-    <label for="emp-input">Número de empleado</label>
-    <input type="text" id="emp-input" placeholder="Ej: 1001"
-      style="text-align:center; letter-spacing:2px; font-size:15px; margin-bottom:10px"
-      onkeydown="if(event.key==='Enter') doLogin()" />
-    <button class="btn-primary" style="width:100%; justify-content:center; padding:10px" onclick="doLogin()">
+    <p>Matriz de Madurez de Foros</p>
+    <label for="emp-in">Número de empleado</label>
+    <input type="text" id="emp-in" placeholder="Ej: 1001" style="text-align:center;letter-spacing:2px;font-size:14px;margin-bottom:9px" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn-p" style="width:100%;justify-content:center;padding:9px" onclick="doLogin()">
       <i class="ti ti-login"></i> Ingresar
     </button>
-    <p id="login-error"><i class="ti ti-alert-circle"></i> Número de empleado no válido</p>
+    <p id="login-error"><i class="ti ti-alert-circle"></i> Número no válido</p>
     <p id="login-hint">Admin: <strong>9999</strong> &nbsp;|&nbsp; Usuario ejemplo: <strong>1001</strong></p>
   </div>
 </div>
 
-<!-- =================== APP =================== -->
 <div id="app-wrap" style="display:none">
-
   <header id="app-header">
-    <div class="brand">
-      <i class="ti ti-clipboard-check"></i>
-      <span>Evaluación QRQC</span>
-    </div>
+    <div class="brand"><i class="ti ti-clipboard-check"></i><span>Evaluación QRQC</span></div>
     <div class="hright">
       <span class="emp-tag" id="emp-tag"></span>
-      <button id="btn-admin-hdr" class="btn-warning" style="display:none; font-size:12px; padding:5px 10px" onclick="showTab('admin')">
+      <button id="btn-adm-hdr" class="btn-g" style="display:none;color:#fbbf24;border-color:#fbbf24;font-size:11px;padding:4px 9px" onclick="showTab('admin')">
         <i class="ti ti-settings"></i> Admin
       </button>
-      <button class="btn-ghost" style="color:#bfdbfe" onclick="doLogout()">
-        <i class="ti ti-logout"></i>
-      </button>
+      <button class="btn-g" style="color:#bfdbfe;font-size:11px" onclick="doLogout()"><i class="ti ti-logout"></i></button>
     </div>
   </header>
 
   <nav id="app-nav">
-    <button class="nav-btn active" id="tab-btn-eval"    onclick="showTab('eval')">
-      <i class="ti ti-star"></i> Evaluar
-    </button>
-    <button class="nav-btn" id="tab-btn-history" onclick="showTab('history')">
-      <i class="ti ti-history"></i> Historial
-    </button>
-    <button class="nav-btn" id="tab-btn-admin" style="display:none" onclick="showTab('admin')">
-      <i class="ti ti-settings"></i> Admin
-    </button>
+    <button class="nav-btn active" id="tab-btn-eval" onclick="showTab('eval')"><i class="ti ti-star"></i> Evaluar</button>
+    <button class="nav-btn" id="tab-btn-history" onclick="showTab('history')"><i class="ti ti-history"></i> Historial</button>
+    <button class="nav-btn" id="tab-btn-admin" style="display:none" onclick="showTab('admin')"><i class="ti ti-settings"></i> Admin</button>
   </nav>
 
   <div id="app-content">
 
-    <!-- ============ TAB: EVALUAR ============ -->
     <div id="tab-eval" class="screen active">
-
-      <!-- Encabezado del foro -->
-      <div class="card" style="padding:18px; margin-bottom:16px">
-        <h2 style="margin-bottom:14px"><i class="ti ti-forms"></i> Datos del foro</h2>
+      <div class="card" style="padding:16px;margin-bottom:14px">
+        <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-forms"></i> Datos del foro</h2>
         <div class="form-grid">
-          <div>
-            <label for="f-fecha">Fecha</label>
-            <input type="date" id="f-fecha" />
-          </div>
-          <div>
-            <label for="f-area">Área</label>
-            <input type="text" id="f-area" placeholder="Ej: Línea A / Ensamble" />
-          </div>
-          <div>
-            <label for="f-nombre">Nombre del foro</label>
-            <input type="text" id="f-nombre" placeholder="Ej: Foro Calidad 01" />
-          </div>
-          <div>
-            <label for="f-nivel">Nivel QRQC</label>
-            <select id="f-nivel" onchange="renderEvalTable()">
-              <option value="N1">N1 — Línea</option>
-              <option value="N2">N2 — Área</option>
-              <option value="N3">N3 — Planta</option>
-            </select>
-          </div>
+          <div><label>Fecha</label><input type="date" id="f-fecha"/></div>
+          <div><label>Área</label><input type="text" id="f-area" placeholder="Ej: Línea A"/></div>
+          <div><label>Nombre del foro</label><input type="text" id="f-nombre" placeholder="Ej: Foro 01"/></div>
         </div>
       </div>
-
-      <!-- Tabla de evaluación -->
-      <div class="card" style="padding:18px; margin-bottom:16px" id="eval-card">
-        <h2 style="margin-bottom:14px"><i class="ti ti-table"></i> Tabla de evaluación</h2>
-        <div id="eval-table-container"></div>
+      <div class="card" style="padding:16px;margin-bottom:14px">
+        <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-table"></i> Matriz de evaluación</h2>
+        <div class="alert a-info" style="font-size:11px">
+          <i class="ti ti-info-circle"></i>
+          Marca los criterios que se cumplen. Una sección se completa cuando <strong>todos</strong> sus criterios están marcados. Cada sección completada vale <strong>1 punto</strong> por nivel.
+        </div>
+        <div class="matrix-wrap" id="matrix-container"></div>
       </div>
-
       <div class="flex-end">
-        <button onclick="resetForm()"><i class="ti ti-refresh"></i> Limpiar</button>
-        <button class="btn-success" onclick="saveEval()">
-          <i class="ti ti-device-floppy"></i> Guardar evaluación
-        </button>
+        <button onclick="resetEval()"><i class="ti ti-refresh"></i> Limpiar</button>
+        <button class="btn-s" onclick="saveEval()"><i class="ti ti-device-floppy"></i> Guardar evaluación</button>
       </div>
     </div>
 
-    <!-- ============ TAB: HISTORIAL ============ -->
     <div id="tab-history" class="screen">
-      <div class="section-header">
+      <div class="sec-hdr">
         <h2><i class="ti ti-history"></i> Historial de evaluaciones</h2>
-        <button class="btn-success" onclick="exportExcel()">
-          <i class="ti ti-file-spreadsheet"></i> Exportar Excel
-        </button>
+        <button class="btn-s" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
       </div>
-
-      <div class="card" style="padding:14px; margin-bottom:14px">
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
-          <div style="flex:0 0 140px">
-            <label>Filtrar por nivel</label>
+      <div class="card" style="padding:13px;margin-bottom:12px">
+        <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:0 0 130px"><label>Filtrar nivel</label>
             <select id="h-nivel" onchange="renderHistory()">
               <option value="">Todos</option>
-              <option value="N1">N1</option>
-              <option value="N2">N2</option>
-              <option value="N3">N3</option>
+              <option value="BASICO">Básico</option>
+              <option value="BRONCE">Bronce</option>
             </select>
           </div>
-          <div style="flex:1; min-width:150px">
-            <label>Buscar área / foro</label>
-            <input type="text" id="h-search" placeholder="Escribir para filtrar…" oninput="renderHistory()" />
+          <div style="flex:1;min-width:140px"><label>Buscar área / foro</label>
+            <input type="text" id="h-search" placeholder="Escribir…" oninput="renderHistory()"/>
           </div>
         </div>
       </div>
-
       <div id="history-list"></div>
     </div>
 
-    <!-- ============ TAB: ADMIN ============ -->
     <div id="tab-admin" class="screen">
-
-      <div class="alert alert-warning">
-        <i class="ti ti-shield-lock"></i>
-        <strong>Modo administrador</strong> — Cambios en criterios afectan evaluaciones futuras.
-      </div>
-
-      <!-- Editor de criterios -->
-      <div class="card" style="padding:18px; margin-bottom:16px">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px">
-          <h2><i class="ti ti-edit"></i> Criterios de evaluación</h2>
-          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <div class="alert a-warn"><i class="ti ti-shield-lock"></i><strong>Modo administrador</strong> — Edición de criterios y empleados.</div>
+      <div class="card" style="padding:16px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:12px">
+          <h2 style="font-size:13px;font-weight:600"><i class="ti ti-edit"></i> Criterios de la matriz</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <label style="margin:0">Nivel:</label>
-            <select id="admin-nivel" style="width:auto" onchange="renderAdminCriteria()">
-              <option value="N1">N1 — Línea</option>
-              <option value="N2">N2 — Área</option>
-              <option value="N3">N3 — Planta</option>
+            <select id="adm-nivel" style="width:auto" onchange="renderAdminCrit()">
+              <option value="BASICO">Básico</option>
+              <option value="BRONCE">Bronce</option>
             </select>
-            <button class="btn-primary" onclick="adminAddCat()">
-              <i class="ti ti-folder-plus"></i> Nueva categoría
-            </button>
+            <button class="btn-p" onclick="admAddSec()"><i class="ti ti-folder-plus"></i> Nueva sección</button>
           </div>
         </div>
-        <div id="admin-criteria-list"></div>
-        <div class="flex-end">
-          <button class="btn-success" onclick="adminSaveCriteria()">
-            <i class="ti ti-device-floppy"></i> Guardar cambios
-          </button>
-        </div>
+        <div id="adm-crit-list"></div>
+        <div class="flex-end"><button class="btn-s" onclick="admSaveCrit()"><i class="ti ti-device-floppy"></i> Guardar cambios</button></div>
       </div>
-
-      <!-- Gestión de empleados -->
-      <div class="card" style="padding:18px">
-        <h2 style="margin-bottom:14px"><i class="ti ti-users"></i> Empleados registrados</h2>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:flex-end">
-          <div style="flex:1; min-width:130px">
-            <label>No. de empleado</label>
-            <input type="text" id="new-emp" placeholder="Ej: 1234" />
-          </div>
-          <div style="flex:0 0 130px">
-            <label>Rol</label>
-            <select id="new-role">
-              <option value="user">Usuario</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <button class="btn-primary" onclick="addEmployee()">
-            <i class="ti ti-user-plus"></i> Agregar
-          </button>
+      <div class="card" style="padding:16px">
+        <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-users"></i> Empleados</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end">
+          <div style="flex:1;min-width:120px"><label>No. empleado</label><input type="text" id="new-emp" placeholder="Ej: 1234"/></div>
+          <div style="flex:0 0 120px"><label>Rol</label><select id="new-role"><option value="user">Usuario</option><option value="admin">Admin</option></select></div>
+          <button class="btn-p" onclick="addEmp()"><i class="ti ti-user-plus"></i> Agregar</button>
         </div>
-        <div id="emp-list" style="max-height:240px; overflow-y:auto"></div>
+        <div id="emp-list" style="max-height:220px;overflow-y:auto"></div>
       </div>
+    </div>
 
-    </div><!-- /tab-admin -->
-
-  </div><!-- /app-content -->
-</div><!-- /app-wrap -->
-
+  </div>
+</div>
 <div id="toast"></div>
 
-<!-- =================== DATOS POR DEFECTO =================== -->
 <script>
-/* =====================================================================
-   CRITERIOS PREDETERMINADOS — Edítalos libremente aquí O usa el
-   panel Admin en la app para modificarlos sin tocar el código.
-   ===================================================================== */
-const DEFAULT_CRITERIA = {
-  N1: [
-    { id: 1, cat: "1. Gestión del foro", items: [
-      { id: 11, texto: "El foro se realiza con la frecuencia establecida (diaria)" },
-      { id: 12, texto: "Asistencia completa del equipo multidisciplinario" },
-      { id: 13, texto: "El foro inicia y termina en el tiempo acordado" },
-      { id: 14, texto: "Existe un responsable / facilitador definido" },
-    ]},
-    { id: 2, cat: "2. Detección y registro de problemas", items: [
-      { id: 21, texto: "Los problemas son registrados el mismo día que ocurren" },
-      { id: 22, texto: "Se utiliza el formato estándar de reporte" },
-      { id: 23, texto: "Los datos del problema son claros y completos (qué, dónde, cuándo)" },
-      { id: 24, texto: "Se registra la cantidad de piezas afectadas" },
-    ]},
-    { id: 3, cat: "3. Contención inmediata", items: [
-      { id: 31, texto: "Se define una acción de contención en menos de 1 hora" },
-      { id: 32, texto: "La acción de contención está implementada en el piso" },
-      { id: 33, texto: "Se verifica la efectividad de la contención" },
-    ]},
-    { id: 4, cat: "4. Análisis de causa raíz", items: [
-      { id: 41, texto: "Se aplica metodología de análisis (5 Porqués / Ishikawa)" },
-      { id: 42, texto: "La causa raíz identificada es coherente con el problema" },
-      { id: 43, texto: "El análisis involucra a las personas del proceso" },
-    ]},
-    { id: 5, cat: "5. Seguimiento y cierre", items: [
-      { id: 51, texto: "Las acciones correctivas tienen responsable y fecha definida" },
-      { id: 52, texto: "Existe seguimiento visual del estatus de cada acción" },
-      { id: 53, texto: "Los problemas cerrados tienen evidencia de cierre" },
-      { id: 54, texto: "Se hace revisión de problemas recurrentes" },
-    ]},
-  ],
+const MATRIX = [
+  {
+    id:1, nombre:"Desempeño: definición",
+    BASICO:[
+      "La zona ha identificado su rendimiento general (la 'Y') (Productividad).",
+      "Los indicadores SQCDPI (la 'X'). Estos KPIs se validan con el equipo. Se identifican el indicador S, y al menos uno entre QCD.",
+      "Cada indicador debe incluir una meta (objetivo medible visible en el gráfico).",
+      "Los valores para que las situaciones son Rojo – NO OK y Verde – Correcto."
+    ],
+    BRONCE:[
+      "El desempeño general, su meta y su tendencia se monitorean mensualmente y es visible.",
+      "Todos los indicadores SQCDPI están definidos, cada uno con su meta, que proporciona un límite para detectar desviaciones.",
+      "La tendencia móvil de seis meses de cada indicador SQCDPI es visible."
+    ]
+  },
+  {
+    id:2, nombre:"Desempeño: Aplicación / Análisis",
+    BASICO:[
+      "Los indicadores SQCDPI se revisan diariamente haciendo preguntas al equipo.",
+      "Los miembros del equipo pueden identificar y reportar desviaciones por sí mismos.",
+      "En caso de desviación, se formaliza una acción de caracterización y contención en el QRAP."
+    ],
+    BRONCE:[
+      "Cuando un indicador SQCDPI está de forma constante verde, el responsable realiza un OJT para confirmar que no se puede mejorar y que el equipo sabe cómo identificar un nuevo indicador.",
+      "Cuando el desempeño general mejora, o está en rojo constante, el equipo sabe revisar la definición de los indicadores SQCDPI: el objetivo es retar la madurez de sus procesos de resolución de problemas.",
+      "Este análisis, realizado trimestralmente con el equipo, destaca los avances logrados y permite tomar acciones de mejora cuando sea necesario. Estas acciones están formalizadas en el plan de acciones de mejora QRQC.",
+      "Cada desviación reportada se caracteriza, seguida de una acción sistemática de contención formalizada en el QRAP o en la junta de desviación/contención.",
+      "Dependiendo del impacto de la desviación (consecuencia), se realiza un análisis de causa raíz: en el QRAP en nivel 1 / con una Resolución de Problemas en el nivel 2."
+    ]
+  },
+  {
+    id:3, nombre:"QRQC Reseñas",
+    BASICO:[
+      "Existe una rutina diaria de QRQC para mejorar el rendimiento basada en la resolución de los problemas reportados.",
+      "Se realiza conforme a los Términos de Referencia y al estándar de Gestión Visual.",
+      "El rendimiento, el monitoreo de los indicadores SQCDPI identificados y las acciones tomadas son visibles de forma permanente en el QRQC Visual.",
+      "El QRQC Visual es accesible tanto para los miembros del equipo como para cualquiera que pase por la zona.",
+      "El área está dedicada y es distinta de las zonas de seguimiento de información/producción y situado en proximidad inmediata a las actividades del equipo.",
+      "El líder y todo el equipo participan.",
+      "La iniciación de las Resolución de Problemas se decide durante la sesión QRQC con los colaboradores en función de criterios compartidos."
+    ],
+    BRONCE:[
+      "Las desviaciones se informan a medida que ocurren y se actualiza el pizarron.",
+      "El equipo se desafía a sí mismo en el progreso del procedimiento para asegurarse de que se complete dentro del tiempo asignado, cumplen con el tiempo estimado.",
+      "Al menos una vez al año, el equipo evalúa la madurez del QRQC y sus rutinas: las acciones de mejora se completan en la tabla 'Acciones de Mejora QRQC'.",
+      "Las acciones identificadas están claramente formuladas en el QRAP o 'Desviaciones/panel de contención', y asignadas a una o más personas presentes con un plazo.",
+      "El seguimiento de la acción (QRAP o 'lista de desviaciones/contención') no incluye una fecha pasada. Si no se cumple un compromiso, la acción se reprograma, entendiendo por qué la fecha de compromiso no pudo cumplirse.",
+      "Las reglas de escalación son conocidas y aplicadas.",
+      "En el nivel 2 y superiores, las soluciones de problemas se comparten durante las revisiones QRQC, presentando su progreso mediante hitos. La planificación por hitos es visible en los pasos de resolución de problemas.",
+      "Si el líder está ausente, la revisión la realiza el equipo."
+    ]
+  },
+  {
+    id:4, nombre:"Detente en la primera desviación y caracterización",
+    BASICO:[
+      "Cuando se detecta una desviación del estándar, la persona que ha detectado la desviación se detiene para reaccionar (para alertar, caracterizar y contener).",
+      "Los problemas se describen al menos comparando la mala situación con el estándar escrito o no escrito (práctico).",
+      "Esta caracterización se formaliza, como mínimo, durante la revisión en el QRAP o junta de 'Desviación/Contención'."
+    ],
+    BRONCE:[
+      "Para al primer signo de desviación la mayor parte de las veces activa una caracterización formal en el momento de la detección.",
+      "Los problemas se caracterizan usando el método 5W2H y los Tres Reales (situación real, lugar real, objeto real) en una hoja de caracterización realizada por la persona que detectó el problema.",
+      "Los datos reales se presentan durante la revisión en el momento de compartir la caracterización."
+    ]
+  },
+  {
+    id:5, nombre:"Contención",
+    BASICO:[
+      "El contención es sistemático e implica reanudar la actividad lo antes posible con acciones inmediatas: para el elemento (parte/archivo, etc.) con la anomalía, para trabajos en curso si procede, proteger a los clientes (tanto internos como externos) si procede.",
+      "Las desviaciones que podrían afectar a la Seguridad de Vuelos (SMS), anomalías exportadas a clientes o Pérdidas de Alto Potencial se escalan en nivel 3 o superior."
+    ],
+    BRONCE:[
+      "Una evaluación inicial del problema ha hecho posible detectar su punto de aparición (ocurrencia) en el proceso y a partir de ese punto se toma acción. El plan de contención se completa si es necesario.",
+      "La contención se formaliza en el QRAP o 'Junta de desviación/contención'. Si se define un modo de funcionamiento temporal, se formaliza en un estándar y se comunica."
+    ]
+  },
+  {
+    id:6, nombre:"Busca causas de ocurrencia Y no detección",
+    BASICO:[
+      "El análisis de causa raíz se inicia tan pronto como surge el problema, involucrando a los empleados/operadores relevantes.",
+      "La investigación de la causa raíz se realiza en el lugar correcto, basándose en los Tres Reales (situación real, lugar real, objeto real)."
+    ],
+    BRONCE:[
+      "Las causas de la no detección se diferencian claramente de las causas de ocurrencia, para Nivel 2 y Superiores."
+    ]
+  },
+  {
+    id:7, nombre:"Búsqueda de soluciones y definición del plan de acción",
+    BASICO:[
+      "Las acciones de contención se distinguen claramente de las acciones correctivas destinadas a erradicar las causas raíz.",
+      "Las personas relevantes para la solución participan en la selección de las acciones.",
+      "Para cada acción, se identifica un propietario que se compromete con el/los entregable(s) y los plazos."
+    ],
+    BRONCE:[
+      "Las soluciones conducen a la mejora del proceso en cuestión y a la modificación de un estándar (visual 5S, materiales de tutoría/formación, procedimientos, etc.).",
+      "Las acciones se desglosan en pasos elementales para asegurar una gestión dinámica y capturar desviaciones."
+    ]
+  },
+  {
+    id:8, nombre:"Implementación del plan de acción",
+    BASICO:[
+      "Las acciones se llevan a cabo según el calendario. Cualquier desviación del calendario se comunica durante la revisión y se fija una nueva fecha de compromiso."
+    ],
+    BRONCE:[
+      "El progreso de las acciones se revisa en la gemba y se comparte con todo el equipo (OJT)."
+    ]
+  },
+  {
+    id:9, nombre:"Verificación de la efectividad de la acción",
+    BASICO:[
+      "La efectividad de las acciones se comprueba en los campos durante su implementación."
+    ],
+    BRONCE:[
+      "Según la gravedad del problema, se implementa un plan de verificación (por ejemplo, acciones de seguimiento, auditorías, etc.) para asegurar que el problema no haya reaparecido.",
+      "El equipo evalúa si la acción debe ser extensiva a procesos similares y gestiona las acciones adecuadas."
+    ]
+  },
+  {
+    id:10, nombre:"Comportamiento Liderazgo",
+    BASICO:[
+      "El líder ve cada problema como una oportunidad de mejora.",
+      "Cuando se enfrenta a un problema, el líder mantiene una actitud positiva para animar al equipo.",
+      "Son atentos, identifican dificultades y ofrecen ayuda en el terreno demostrando a su equipo cómo proceder (Formación en el puesto de trabajo, OJT)."
+    ],
+    BRONCE:[
+      "El responsable anima a todos los miembros del equipo, y a los miembros de QRQC de nivel inferior, a practicar la detención ante la primera señal de desviación y abordarla.",
+      "Practica la formación en el puesto de trabajo (OJT), que puede llevarse a cabo según sea necesario, a través de las distintas etapas de resolución de problemas.",
+      "El gestor desafía al equipo a utilizar datos reales para tomar decisiones basadas en hechos.",
+      "El responsable elogia explícitamente al equipo por sus éxitos o experiencias de aprendizaje.",
+      "En caso de escalada, el responsable desafía al QRQC de nivel superior a obtener una respuesta rápida y comunicarla al equipo."
+    ]
+  }
+];
 
-  N2: [
-    { id: 1, cat: "1. Gestión del foro N2", items: [
-      { id: 11, texto: "El foro N2 se realiza con frecuencia semanal establecida" },
-      { id: 12, texto: "Participación de líderes de área y supervisores" },
-      { id: 13, texto: "Se revisan los problemas escalados de N1" },
-      { id: 14, texto: "Existe agenda estructurada para el foro" },
-    ]},
-    { id: 2, cat: "2. Escalamiento desde N1", items: [
-      { id: 21, texto: "Los criterios de escalamiento N1→N2 están definidos" },
-      { id: 22, texto: "Los problemas escalados tienen la información completa de N1" },
-      { id: 23, texto: "El tiempo de escalamiento respeta el estándar establecido" },
-    ]},
-    { id: 3, cat: "3. Análisis y solución", items: [
-      { id: 31, texto: "Se realiza análisis profundo con herramientas (8D, A3, etc.)" },
-      { id: 32, texto: "Se involucra a ingeniería / calidad en el análisis" },
-      { id: 33, texto: "Las soluciones propuestas atacan la causa raíz" },
-      { id: 34, texto: "Se validan las soluciones antes de implementar" },
-    ]},
-    { id: 4, cat: "4. Indicadores y métricas", items: [
-      { id: 41, texto: "Se revisan los KPI de calidad del área en el foro" },
-      { id: 42, texto: "Existe tendencia visible de mejora en indicadores" },
-      { id: 43, texto: "Se comparan resultados vs. objetivos establecidos" },
-    ]},
-    { id: 5, cat: "5. Gestión del conocimiento", items: [
-      { id: 51, texto: "Las lecciones aprendidas se documentan y difunden" },
-      { id: 52, texto: "Se actualizan los estándares de trabajo cuando aplica" },
-      { id: 53, texto: "Existe base de conocimiento de problemas resueltos" },
-    ]},
-  ],
-
-  N3: [
-    { id: 1, cat: "1. Liderazgo y gobernanza", items: [
-      { id: 11, texto: "La dirección / gerencia participa en el foro N3" },
-      { id: 12, texto: "Existe un sistema de gobierno QRQC documentado" },
-      { id: 13, texto: "Los roles y responsabilidades en QRQC están definidos" },
-    ]},
-    { id: 2, cat: "2. Escalamiento N2→N3", items: [
-      { id: 21, texto: "Los criterios de escalamiento N2→N3 están claros y aplicados" },
-      { id: 22, texto: "La información de N2 llega completa al foro N3" },
-      { id: 23, texto: "El foro N3 se realiza con la periodicidad establecida" },
-    ]},
-    { id: 3, cat: "3. Análisis sistémico", items: [
-      { id: 31, texto: "Se identifican problemas sistémicos / transversales a varias áreas" },
-      { id: 32, texto: "Se utilizan herramientas avanzadas de análisis (FMEA, DOE, etc.)" },
-      { id: 33, texto: "Existe coordinación cross-funcional en la solución" },
-      { id: 34, texto: "Se monitorean proyectos de mejora a largo plazo" },
-    ]},
-    { id: 4, cat: "4. Indicadores planta", items: [
-      { id: 41, texto: "Se revisan indicadores de toda la planta (PPM, scrap, retrabajos)" },
-      { id: 42, texto: "Los objetivos están alineados a la estrategia del negocio" },
-      { id: 43, texto: "Existe plan de acción para indicadores fuera de objetivo" },
-      { id: 44, texto: "Se hace benchmarking con otras plantas / divisiones" },
-    ]},
-    { id: 5, cat: "5. Cultura y mejora continua", items: [
-      { id: 51, texto: "El QRQC está integrado en la cultura de la planta" },
-      { id: 52, texto: "Existe plan de entrenamiento y certificación en QRQC" },
-      { id: 53, texto: "Se mide el nivel de madurez QRQC periódicamente" },
-      { id: 54, texto: "Se comparten mejores prácticas con otras plantas" },
-    ]},
-  ]
-};
-
-/* =====================================================================
-   EMPLEADOS POR DEFECTO
-   Clave  = número de empleado (string)
-   role   = "admin" | "user"
-   ===================================================================== */
 const DEFAULT_EMPLOYEES = {
-  "9999": { role: "admin", name: "Admin Principal" },
-  "1001": { role: "user",  name: "Empleado Demo" },
+  "9999":{ role:"admin", name:"Admin Principal" },
+  "1001":{ role:"user",  name:"Empleado Demo" }
 };
+
+const LEVELS = ["BASICO","BRONCE"];
+const LEVEL_LABELS = { BASICO:"Básico", BRONCE:"Bronce", PLATA:"Plata", ORO:"Oro" };
+const LEVEL_CSS   = { BASICO:"basico", BRONCE:"bronce", PLATA:"plata", ORO:"oro" };
 </script>
 
-<!-- =================== LÓGICA =================== -->
 <script>
-/* ---- BASE DE DATOS LOCAL (localStorage) ---- */
-let DB = { employees: {}, criteria: {}, evaluations: [], nextId: 1 };
+let DB = { employees:{}, criteria:[], evaluations:[], nextId:1 };
 
-function loadDB() {
-  try {
-    const s = localStorage.getItem('qrqc_db_v2');
-    if (s) { Object.assign(DB, JSON.parse(s)); }
-    else    { DB.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
-              DB.criteria  = JSON.parse(JSON.stringify(DEFAULT_CRITERIA)); }
-  } catch(e) {
-    DB.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
-    DB.criteria  = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
-  }
+function loadDB(){
+  try{
+    const s = localStorage.getItem('qrqc_matrix_v1');
+    if(s){ Object.assign(DB, JSON.parse(s)); }
+    else { DB.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES)); DB.criteria = JSON.parse(JSON.stringify(MATRIX)); }
+  } catch(e){ DB.employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES)); DB.criteria = JSON.parse(JSON.stringify(MATRIX)); }
 }
-function saveDB() {
-  try { localStorage.setItem('qrqc_db_v2', JSON.stringify(DB)); } catch(e) {}
-}
+function saveDB(){ try{ localStorage.setItem('qrqc_matrix_v1', JSON.stringify(DB)); }catch(e){} }
 loadDB();
 
-/* ---- SESSION ---- */
 let currentUser = null;
-let evalScores  = {};
-let editCrit    = null;   // copia de trabajo para admin
+let editCrit = null;
 
-/* ---- TOAST ---- */
-function toast(msg, type = 'info') {
+function toast(msg, type='info'){
   const el = document.getElementById('toast');
-  const colors = { info:'#1a6ef5', success:'#16a34a', danger:'#dc2626', warning:'#d97706' };
-  el.style.background = colors[type] || colors.info;
+  const c = {info:'#1a6ef5',success:'#16a34a',danger:'#dc2626',warning:'#d97706'};
+  el.style.background = c[type]||c.info;
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2800);
+  setTimeout(()=>el.classList.remove('show'), 2800);
 }
 
-/* ---- LOGIN ---- */
-function doLogin() {
-  const emp = document.getElementById('emp-input').value.trim();
-  if (!emp || !DB.employees[emp]) {
-    document.getElementById('login-error').style.display = 'block'; return;
-  }
-  currentUser = { id: emp, ...DB.employees[emp] };
-  document.getElementById('login-error').style.display = 'none';
-  document.getElementById('login-wrap').style.display  = 'none';
-  document.getElementById('app-wrap').style.display    = 'block';
-  document.getElementById('emp-tag').textContent       = 'Emp: ' + emp;
-
-  if (currentUser.role === 'admin') {
-    document.getElementById('btn-admin-hdr').style.display  = '';
-    document.getElementById('tab-btn-admin').style.display  = '';
+function doLogin(){
+  const emp = document.getElementById('emp-in').value.trim();
+  if(!emp || !DB.employees[emp]){ document.getElementById('login-error').style.display='block'; return; }
+  currentUser = {id:emp, ...DB.employees[emp]};
+  document.getElementById('login-error').style.display='none';
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('app-wrap').style.display='block';
+  document.getElementById('emp-tag').textContent = 'Emp: '+emp;
+  if(currentUser.role==='admin'){
+    document.getElementById('btn-adm-hdr').style.display='';
+    document.getElementById('tab-btn-admin').style.display='';
   }
   document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
-  renderEvalTable();
+  buildMatrix();
   showTab('eval');
 }
 
-function doLogout() {
-  currentUser = null; evalScores = {};
-  document.getElementById('app-wrap').style.display    = 'none';
-  document.getElementById('login-wrap').style.display  = 'flex';
-  document.getElementById('emp-input').value = '';
-  document.getElementById('btn-admin-hdr').style.display = 'none';
-  document.getElementById('tab-btn-admin').style.display = 'none';
+function doLogout(){
+  currentUser=null;
+  document.getElementById('app-wrap').style.display='none';
+  document.getElementById('login-wrap').style.display='flex';
+  document.getElementById('emp-in').value='';
+  document.getElementById('btn-adm-hdr').style.display='none';
+  document.getElementById('tab-btn-admin').style.display='none';
 }
 
-/* ---- TABS ---- */
-function showTab(name) {
-  ['eval','history','admin'].forEach(t => {
-    document.getElementById('tab-' + t).classList.toggle('active', t === name);
-    const btn = document.getElementById('tab-btn-' + t);
-    if (btn) btn.classList.toggle('active', t === name);
+function showTab(name){
+  ['eval','history','admin'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===name);
+    const b=document.getElementById('tab-btn-'+t);
+    if(b) b.classList.toggle('active',t===name);
   });
-  if (name === 'history') renderHistory();
-  if (name === 'admin')   { renderAdminCriteria(); renderEmpList(); }
+  if(name==='history') renderHistory();
+  if(name==='admin'){ renderAdminCrit(); renderEmpList(); }
 }
 
-/* ========================================================
-   MÓDULO: EVALUAR
-   ======================================================== */
-function renderEvalTable() {
-  const nivel = document.getElementById('f-nivel').value;
-  const cats  = DB.criteria[nivel] || [];
-  evalScores  = {};
-  let totalMax = 0;
-  let html = '';
+function buildMatrix(){
+  const secs = DB.criteria;
+  const levs = LEVELS;
+  const totalPossible = secs.reduce((a,s)=> a+levs.filter(l=>s[l]&&s[l].length>0).length, 0);
+  let html = '<table class="matrix"><thead><tr>';
+  html += '<th style="width:110px">Sección</th>';
+  html += '<th style="width:70px">Nivel</th>';
+  html += '<th>Criterio de evaluación</th>';
+  html += '<th style="min-width:34px">✓</th>';
+  html += '<th style="min-width:55px">Pts secc.</th>';
+  html += '</tr></thead><tbody>';
 
-  cats.forEach(cat => {
-    html += `<div class="eval-cat-title">${cat.cat}</div>
-    <table class="eval-table">
-      <thead><tr>
-        <th>Criterio de evaluación</th>
-        <th style="width:200px;text-align:center">Puntuación (0–5)</th>
-        <th style="width:50px">Pts</th>
-      </tr></thead><tbody>`;
-
-    cat.items.forEach((item, i) => {
-      totalMax += 5;
-      html += `<tr>
-        <td>${item.texto}</td>
-        <td>
-          <div class="score-cell">
-            <input type="range" min="0" max="5" step="1" value="0"
-              id="rng_${nivel}_${item.id}"
-              oninput="updateScore('${nivel}','${item.id}',this.value)" />
-            <span class="score-lbl" id="lbl_${nivel}_${item.id}">0</span>
-          </div>
-        </td>
-        <td id="pts_${nivel}_${item.id}" style="color:var(--gray-400)">0</td>
-      </tr>`;
+  secs.forEach((sec)=>{
+    let firstRow = true;
+    const totalRows = levs.reduce((a,l)=> a+(sec[l]?sec[l].length:0), 0);
+    levs.forEach((lev)=>{
+      const crit = sec[lev]||[];
+      if(!crit.length) return;
+      crit.forEach((cr, ci)=>{
+        html += '<tr>';
+        if(firstRow && ci===0){
+          html += `<td class="sec-label s-${LEVEL_CSS[levs[0]]}" rowspan="${totalRows}" style="vertical-align:middle">${sec.nombre}</td>`;
+        }
+        if(ci===0){
+          html += `<td class="sec-label s-${LEVEL_CSS[lev]}" rowspan="${crit.length}" style="vertical-align:middle;font-size:10px">${LEVEL_LABELS[lev]}</td>`;
+        }
+        const key = `${sec.id}_${lev}_${ci}`;
+        html += `<td class="criterion-text${ci%2===0?'':' odd'}">${cr}</td>`;
+        html += `<td class="chk-cell"><input type="checkbox" id="chk_${key}" onchange="onCheck('${sec.id}')"/></td>`;
+        if(firstRow && ci===0){
+          html += `<td class="sec-score score-0" rowspan="${totalRows}" id="score-${sec.id}" style="vertical-align:middle">—</td>`;
+        }
+        html += '</tr>';
+        if(ci===0) firstRow = false;
+      });
     });
-    html += `</tbody></table><div style="margin-bottom:14px"></div>`;
   });
 
-  html += `<div class="total-bar">
-    <div>
-      <div style="font-size:13px;color:var(--gray-500);margin-bottom:2px">Total obtenido</div>
-      <span class="total-score" id="total-pts">0</span>
-      <span class="total-max" id="total-max"> / ${totalMax} pts</span>
-    </div>
-    <div id="pct-pill" class="pct-pill" style="background:var(--gray-100);color:var(--gray-500)">0%</div>
-  </div>`;
-
-  document.getElementById('eval-table-container').innerHTML = html;
+  html += `<tr class="total-row"><td colspan="4" style="text-align:right;padding-right:16px">TOTAL MATRIZ</td><td id="grand-total">0 / ${totalPossible}</td></tr>`;
+  html += '</tbody></table>';
+  document.getElementById('matrix-container').innerHTML = html;
+  recalcAll();
 }
 
-function updateScore(nivel, itemId, val) {
-  const v   = parseInt(val);
-  const key = nivel + '_' + itemId;
-  evalScores[key] = v;
-  document.getElementById('lbl_' + key).textContent = v;
-  const ptsEl = document.getElementById('pts_' + key);
-  ptsEl.textContent = v;
-  const colors = v >= 5 ? '#16a34a' : v >= 3 ? '#1a6ef5' : v >= 1 ? '#d97706' : '#94a3b8';
-  ptsEl.style.color = colors;
-  calcTotal(nivel);
+function onCheck(secId){ recalcSection(secId); recalcGrand(); }
+
+function recalcSection(secId){
+  const sec = DB.criteria.find(s=>String(s.id)===String(secId));
+  if(!sec) return;
+  let pts=0, possible=0;
+  LEVELS.forEach(lev=>{
+    const crit=sec[lev]||[];
+    if(!crit.length) return;
+    possible++;
+    const done=crit.every((_,ci)=>{ const el=document.getElementById(`chk_${secId}_${lev}_${ci}`); return el&&el.checked; });
+    if(done) pts++;
+  });
+  const cell=document.getElementById(`score-${secId}`);
+  if(cell){ cell.textContent=pts+' / '+possible; cell.className='sec-score '+(pts>0?'score-ok':'score-0'); }
 }
 
-function calcTotal(nivel) {
-  const cats = DB.criteria[nivel] || [];
-  let total = 0, max = 0;
-  cats.forEach(c => c.items.forEach(i => {
-    max += 5;
-    total += evalScores[nivel + '_' + i.id] || 0;
-  }));
-  const pct = max > 0 ? Math.round(total / max * 100) : 0;
-  document.getElementById('total-pts').textContent = total;
-  const pill = document.getElementById('pct-pill');
-  pill.textContent = pct + '%';
-  if      (pct >= 80) { pill.style.background = '#dcfce7'; pill.style.color = '#15803d'; }
-  else if (pct >= 60) { pill.style.background = '#e8f0fe'; pill.style.color = '#1a6ef5'; }
-  else if (pct >= 40) { pill.style.background = '#fef3c7'; pill.style.color = '#92400e'; }
-  else                { pill.style.background = '#fee2e2'; pill.style.color = '#dc2626'; }
-}
+function recalcAll(){ DB.criteria.forEach(s=>recalcSection(s.id)); recalcGrand(); }
 
-function resetForm() {
-  document.getElementById('f-area').value   = '';
-  document.getElementById('f-nombre').value = '';
-  document.getElementById('f-fecha').value  = new Date().toISOString().split('T')[0];
-  evalScores = {};
-  renderEvalTable();
-}
-
-function saveEval() {
-  const fecha  = document.getElementById('f-fecha').value;
-  const area   = document.getElementById('f-area').value.trim();
-  const nombre = document.getElementById('f-nombre').value.trim();
-  const nivel  = document.getElementById('f-nivel').value;
-
-  if (!fecha || !area || !nombre) {
-    toast('Completa Fecha, Área y Nombre del foro', 'danger'); return;
-  }
-
-  const cats   = DB.criteria[nivel] || [];
-  let total = 0, max = 0;
-  const detail = [];
-
-  cats.forEach(cat => {
-    const catRow = { cat: cat.cat, items: [] };
-    cat.items.forEach(item => {
-      const score = evalScores[nivel + '_' + item.id] || 0;
-      max += 5; total += score;
-      catRow.items.push({ texto: item.texto, score });
+function recalcGrand(){
+  let total=0, possible=0;
+  DB.criteria.forEach(sec=>{
+    LEVELS.forEach(lev=>{
+      const crit=sec[lev]||[];
+      if(!crit.length) return;
+      possible++;
+      const done=crit.every((_,ci)=>{ const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`); return el&&el.checked; });
+      if(done) total++;
     });
-    detail.push(catRow);
   });
+  const el=document.getElementById('grand-total');
+  if(el) el.textContent=total+' / '+possible;
+}
 
-  const pct = max > 0 ? Math.round(total / max * 100) : 0;
-  DB.evaluations.unshift({
-    id: DB.nextId++, fecha, area, nombre, nivel,
-    total, max, pct, detail,
-    empleado: currentUser.id,
-    createdAt: new Date().toISOString()
+function resetEval(){
+  document.getElementById('f-area').value='';
+  document.getElementById('f-nombre').value='';
+  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+  buildMatrix();
+}
+
+function saveEval(){
+  const fecha=document.getElementById('f-fecha').value;
+  const area=document.getElementById('f-area').value.trim();
+  const nombre=document.getElementById('f-nombre').value.trim();
+  if(!fecha||!area||!nombre){ toast('Completa Fecha, Área y Nombre del foro','danger'); return; }
+  const secResults=[];
+  let grandTotal=0, grandPossible=0;
+  DB.criteria.forEach(sec=>{
+    const levData=[];
+    LEVELS.forEach(lev=>{
+      const crit=sec[lev]||[];
+      if(!crit.length) return;
+      const items=crit.map((cr,ci)=>{ const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`); return{texto:cr,checked:el?el.checked:false}; });
+      const complete=items.every(i=>i.checked);
+      if(complete) grandTotal++;
+      grandPossible++;
+      levData.push({nivel:lev,items,complete});
+    });
+    secResults.push({id:sec.id,nombre:sec.nombre,niveles:levData,pts:levData.filter(l=>l.complete).length,possible:levData.length});
   });
+  const pct=grandPossible>0?Math.round(grandTotal/grandPossible*100):0;
+  DB.evaluations.unshift({id:DB.nextId++,fecha,area,nombre,total:grandTotal,possible:grandPossible,pct,sections:secResults,empleado:currentUser.id,createdAt:new Date().toISOString()});
   saveDB();
-  toast('✓ Evaluación guardada — ' + total + '/' + max + ' pts (' + pct + '%)', 'success');
+  toast('✓ Guardado — '+grandTotal+'/'+grandPossible+' pts ('+pct+'%)','success');
 }
 
-/* ========================================================
-   MÓDULO: HISTORIAL
-   ======================================================== */
-function renderHistory() {
-  const fnivel = document.getElementById('h-nivel').value;
-  const ftext  = document.getElementById('h-search').value.toLowerCase();
-  const list   = DB.evaluations.filter(e => {
-    if (fnivel && e.nivel !== fnivel) return false;
-    if (ftext  && !(e.area.toLowerCase().includes(ftext) || e.nombre.toLowerCase().includes(ftext))) return false;
-    return true;
-  });
-
-  if (!list.length) {
-    document.getElementById('history-list').innerHTML =
-      '<div class="empty-state"><i class="ti ti-clipboard-off"></i>No hay evaluaciones registradas.</div>';
-    return;
-  }
-
-  const isAdmin = currentUser && currentUser.role === 'admin';
-  let html = '';
-
-  list.forEach(e => {
-    const pctColor = e.pct >= 80 ? '#16a34a' : e.pct >= 60 ? '#1a6ef5' : e.pct >= 40 ? '#d97706' : '#dc2626';
-    const chips = e.detail.map(cat =>
-      cat.items.map(it => {
-        const cls = it.score >= 4 ? 'chip-hi' : it.score >= 2 ? 'chip-mid' : it.score >= 1 ? 'chip-lo' : 'chip-zero';
-        return `<span class="score-chip ${cls}">${it.score}/5</span>`;
-      }).join('')
-    ).join('');
-
-    html += `<div class="hist-card">
-      <div class="hrow">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="badge badge-${e.nivel.toLowerCase()}">${e.nivel}</span>
-          <span style="font-weight:600;font-size:14px;color:var(--gray-800)">${e.nombre}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:24px;font-weight:600;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span>
-          <span style="font-size:12px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.max}</span>
-          ${isAdmin ? `<button class="btn-ghost btn-danger" style="padding:3px 7px;color:var(--red);border-color:#fca5a5" onclick="deleteEval(${e.id})"><i class="ti ti-trash"></i></button>` : ''}
+function renderHistory(){
+  const ftext=document.getElementById('h-search').value.toLowerCase();
+  const list=DB.evaluations.filter(e=>!ftext||(e.area.toLowerCase().includes(ftext)||e.nombre.toLowerCase().includes(ftext)));
+  if(!list.length){ document.getElementById('history-list').innerHTML='<div class="empty"><i class="ti ti-clipboard-off"></i>No hay evaluaciones registradas.</div>'; return; }
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  let html='';
+  list.forEach(e=>{
+    const pctColor=e.pct>=80?'#16a34a':e.pct>=60?'#1a6ef5':e.pct>=40?'#d97706':'#dc2626';
+    const chips=e.sections.map(sec=>`<span class="sec-chip ${sec.pts===sec.possible?'chip-ok':'chip-no'}" title="${sec.nombre}">${sec.pts}/${sec.possible}</span>`).join('');
+    const levBreak=LEVELS.map(lev=>{ const done=e.sections.filter(s=>s.niveles.find(x=>x.nivel===lev&&x.complete)).length; const tot=e.sections.filter(s=>s.niveles.find(x=>x.nivel===lev)).length; return tot?`<span class="badge b-${LEVEL_CSS[lev]}">${LEVEL_LABELS[lev]}: ${done}/${tot}</span>`:''; }).join(' ');
+    html+=`<div class="hist-card">
+      <div class="hist-row">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-weight:600;font-size:13px;color:var(--gray-800)">${e.nombre}</span></div>
+        <div style="display:flex;align-items:center;gap:9px">
+          <span style="font-size:22px;font-weight:700;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span>
+          <span style="font-size:11px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.possible} pts</span>
+          ${isAdmin?`<button class="btn-g" style="color:var(--red);border-color:#fca5a5;padding:3px 6px" onclick="delEval(${e.id})"><i class="ti ti-trash"></i></button>`:''}
         </div>
       </div>
-      <div class="hmeta">
-        <span><i class="ti ti-calendar"></i>${e.fecha}</span>
-        <span><i class="ti ti-building"></i>${e.area}</span>
-        <span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span>
-      </div>
-      <div class="score-chips">${chips}</div>
+      <div class="hist-meta"><span><i class="ti ti-calendar"></i>${e.fecha}</span><span><i class="ti ti-building"></i>${e.area}</span><span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span></div>
+      <div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">${levBreak}</div>
+      <div class="sec-chips">${chips}</div>
     </div>`;
   });
-
-  document.getElementById('history-list').innerHTML = html;
+  document.getElementById('history-list').innerHTML=html;
 }
 
-function deleteEval(id) {
-  if (!confirm('¿Eliminar esta evaluación?')) return;
-  DB.evaluations = DB.evaluations.filter(e => e.id !== id);
-  saveDB(); renderHistory();
-  toast('Evaluación eliminada', 'warning');
+function delEval(id){ if(!confirm('¿Eliminar esta evaluación?')) return; DB.evaluations=DB.evaluations.filter(e=>e.id!==id); saveDB(); renderHistory(); toast('Eliminada','warning'); }
+
+function exportExcel(){
+  if(!DB.evaluations.length){ toast('No hay evaluaciones','danger'); return; }
+  const wb=XLSX.utils.book_new();
+  const sum=[['ID','Fecha','Área','Foro','Pts Obtenidos','Pts Posibles','%','Empleado','Fecha Registro']];
+  DB.evaluations.forEach(e=>sum.push([e.id,e.fecha,e.area,e.nombre,e.total,e.possible,e.pct+'%',e.empleado,e.createdAt]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Resumen');
+  const det=[['ID','Fecha','Área','Foro','Sección','Nivel','Criterio','Cumplido','Sección Completa']];
+  DB.evaluations.forEach(e=>e.sections.forEach(sec=>sec.niveles.forEach(niv=>niv.items.forEach(it=>det.push([e.id,e.fecha,e.area,e.nombre,sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,it.checked?'Sí':'No',niv.complete?'Sí':'No'])))));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),'Detalle');
+  XLSX.writeFile(wb,'QRQC_Evaluaciones_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('Excel generado','success');
 }
 
-/* ========================================================
-   MÓDULO: EXPORTAR EXCEL
-   ======================================================== */
-function exportExcel() {
-  const fnivel = document.getElementById('h-nivel').value;
-  const ftext  = document.getElementById('h-search').value.toLowerCase();
-  const list   = DB.evaluations.filter(e => {
-    if (fnivel && e.nivel !== fnivel) return false;
-    if (ftext  && !(e.area.toLowerCase().includes(ftext) || e.nombre.toLowerCase().includes(ftext))) return false;
-    return true;
-  });
-
-  if (!list.length) { toast('No hay evaluaciones para exportar', 'danger'); return; }
-
-  const wb = XLSX.utils.book_new();
-
-  /* Hoja 1: Resumen */
-  const sumData = [['ID','Fecha','Nivel','Área','Nombre del Foro','Puntos Obtenidos','Puntos Máximos','Porcentaje','Empleado','Fecha Registro']];
-  list.forEach(e => sumData.push([e.id, e.fecha, e.nivel, e.area, e.nombre, e.total, e.max, e.pct + '%', e.empleado, e.createdAt]));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumData), 'Resumen');
-
-  /* Hoja 2: Detalle */
-  const detData = [['ID','Fecha','Nivel','Área','Foro','Categoría','Criterio','Puntuación (0-5)','Máximo']];
-  list.forEach(e => e.detail.forEach(cat => cat.items.forEach(it =>
-    detData.push([e.id, e.fecha, e.nivel, e.area, e.nombre, cat.cat, it.texto, it.score, 5])
-  )));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detData), 'Detalle');
-
-  XLSX.writeFile(wb, 'QRQC_Evaluaciones_' + new Date().toISOString().split('T')[0] + '.xlsx');
-  toast('Excel generado correctamente', 'success');
+function renderAdminCrit(){
+  const lev=document.getElementById('adm-nivel').value;
+  editCrit=JSON.parse(JSON.stringify(DB.criteria));
+  buildAdminHTML(lev);
 }
 
-/* ========================================================
-   MÓDULO: ADMIN — CRITERIOS
-   ======================================================== */
-function renderAdminCriteria() {
-  const nivel = document.getElementById('admin-nivel').value;
-  editCrit = JSON.parse(JSON.stringify(DB.criteria[nivel] || []));
-  buildAdminCriteriaHTML();
-}
-
-function buildAdminCriteriaHTML() {
-  let html = '';
-  editCrit.forEach((cat, ci) => {
-    html += `<div class="crit-block">
-      <div class="crit-block-head">
-        <i class="ti ti-folder" style="color:var(--blue)"></i>
-        <input type="text" value="${escHtml(cat.cat)}" onchange="editCrit[${ci}].cat = this.value" />
-        <button class="btn-ghost" style="color:var(--red);padding:3px 7px" onclick="adminRemoveCat(${ci})">
-          <i class="ti ti-trash"></i>
-        </button>
-      </div>
-      <div class="crit-block-body">`;
-    cat.items.forEach((item, ii) => {
-      html += `<div class="crit-item-row">
-        <span>${ii + 1}.</span>
-        <input type="text" value="${escHtml(item.texto)}" onchange="editCrit[${ci}].items[${ii}].texto = this.value" />
-        <button class="btn-ghost" style="color:var(--red);padding:2px 6px" onclick="adminRemoveItem(${ci},${ii})">
-          <i class="ti ti-x"></i>
-        </button>
-      </div>`;
+function buildAdminHTML(lev){
+  let html='';
+  editCrit.forEach((sec,si)=>{
+    const items=sec[lev]||[];
+    html+=`<div class="crit-block"><div class="crit-head"><span style="font-size:10px;color:var(--gray-400);min-width:22px">${si+1}.</span><input type="text" value="${escH(sec.nombre)}" onchange="editCrit[${si}].nombre=this.value" style="font-size:12px"/></div><div class="crit-body">`;
+    items.forEach((cr,ci)=>{
+      html+=`<div class="crit-item-row"><span>${ci+1}.</span><input type="text" value="${escH(cr)}" onchange="editCrit[${si}]['${lev}'][${ci}]=this.value" style="font-size:11px"/><button class="btn-g" style="color:var(--red);padding:2px 5px" onclick="admRemItem(${si},'${lev}',${ci})"><i class="ti ti-x"></i></button></div>`;
     });
-    html += `<button style="margin-top:4px;font-size:12px" onclick="adminAddItem(${ci})">
-        <i class="ti ti-plus"></i> Agregar criterio
-      </button></div></div>`;
+    html+=`<button style="font-size:11px;margin-top:3px" onclick="admAddItem(${si},'${lev}')"><i class="ti ti-plus"></i> Agregar criterio</button></div></div>`;
   });
-  document.getElementById('admin-criteria-list').innerHTML = html;
+  document.getElementById('adm-crit-list').innerHTML=html;
 }
 
-function adminAddCat() {
-  const newId = Date.now();
-  editCrit.push({ id: newId, cat: 'Nueva categoría', items: [{ id: newId + 1, texto: 'Nuevo criterio' }] });
-  buildAdminCriteriaHTML();
-}
-function adminRemoveCat(ci)        { editCrit.splice(ci, 1); buildAdminCriteriaHTML(); }
-function adminAddItem(ci)          { editCrit[ci].items.push({ id: Date.now(), texto: 'Nuevo criterio' }); buildAdminCriteriaHTML(); }
-function adminRemoveItem(ci, ii)   { editCrit[ci].items.splice(ii, 1); buildAdminCriteriaHTML(); }
+function admAddSec(){ const lev=document.getElementById('adm-nivel').value; editCrit.push({id:Date.now(),nombre:'Nueva sección',BASICO:[],BRONCE:[]}); buildAdminHTML(lev); }
+function admRemItem(si,lev,ci){ editCrit[si][lev].splice(ci,1); buildAdminHTML(lev); }
+function admAddItem(si,lev){ if(!editCrit[si][lev]) editCrit[si][lev]=[]; editCrit[si][lev].push('Nuevo criterio'); buildAdminHTML(lev); }
+function admSaveCrit(){ DB.criteria=JSON.parse(JSON.stringify(editCrit)); saveDB(); buildMatrix(); toast('✓ Criterios guardados','success'); }
 
-function adminSaveCriteria() {
-  const nivel = document.getElementById('admin-nivel').value;
-  DB.criteria[nivel] = JSON.parse(JSON.stringify(editCrit));
-  saveDB();
-  toast('✓ Criterios de ' + nivel + ' guardados', 'success');
-  renderEvalTable();
-}
-
-/* ========================================================
-   MÓDULO: ADMIN — EMPLEADOS
-   ======================================================== */
-function renderEmpList() {
-  let html = '';
-  Object.entries(DB.employees).sort().forEach(([id, emp]) => {
-    html += `<div class="emp-row">
-      <span class="emp-num">${id}</span>
-      <span class="badge badge-${emp.role}">${emp.role}</span>
-      <span style="flex:1;color:var(--gray-500);font-size:12px">${emp.name || ''}</span>
-      <button class="btn-ghost" style="color:var(--red);padding:3px 7px" onclick="removeEmployee('${id}')" ${id === '9999' ? 'disabled' : ''}>
-        <i class="ti ti-trash"></i>
-      </button>
-    </div>`;
+function renderEmpList(){
+  let html='';
+  Object.entries(DB.employees).sort().forEach(([id,emp])=>{
+    html+=`<div class="emp-row"><span class="emp-num">${id}</span><span class="badge b-${emp.role}">${emp.role}</span><span style="flex:1;color:var(--gray-500);font-size:11px">${emp.name||''}</span><button class="btn-g" style="color:var(--red);padding:3px 6px" onclick="removeEmp('${id}')" ${id==='9999'?'disabled':''}><i class="ti ti-trash"></i></button></div>`;
   });
-  document.getElementById('emp-list').innerHTML = html || '<p class="txt-muted" style="padding:8px">Sin empleados</p>';
+  document.getElementById('emp-list').innerHTML=html||'<p style="color:var(--gray-400);padding:7px;font-size:11px">Sin empleados</p>';
 }
 
-function addEmployee() {
-  const id   = document.getElementById('new-emp').value.trim();
-  const role = document.getElementById('new-role').value;
-  if (!id) { toast('Ingresa un número de empleado', 'danger'); return; }
-  if (DB.employees[id]) { toast('Ese número ya existe', 'warning'); return; }
-  DB.employees[id] = { role, name: 'Empleado ' + id };
+function addEmp(){
+  const id=document.getElementById('new-emp').value.trim();
+  const role=document.getElementById('new-role').value;
+  if(!id){ toast('Ingresa un número','danger'); return; }
+  if(DB.employees[id]){ toast('Ese número ya existe','warning'); return; }
+  DB.employees[id]={role,name:'Empleado '+id};
   saveDB(); renderEmpList();
-  document.getElementById('new-emp').value = '';
-  toast('Empleado ' + id + ' agregado', 'success');
+  document.getElementById('new-emp').value='';
+  toast('Empleado '+id+' agregado','success');
 }
 
-function removeEmployee(id) {
-  if (id === '9999') { toast('No se puede eliminar al admin principal', 'danger'); return; }
-  if (!confirm('¿Eliminar empleado ' + id + '?')) return;
-  delete DB.employees[id];
-  saveDB(); renderEmpList();
-  toast('Empleado ' + id + ' eliminado', 'warning');
+function removeEmp(id){
+  if(id==='9999'){ toast('No se puede eliminar el admin principal','danger'); return; }
+  if(!confirm('¿Eliminar empleado '+id+'?')) return;
+  delete DB.employees[id]; saveDB(); renderEmpList();
+  toast('Empleado eliminado','warning');
 }
 
-/* ---- UTIL ---- */
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 </body>
 </html>
