@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -54,7 +55,16 @@ label{font-size:11px;font-weight:500;color:var(--gray-500);display:block;margin-
 .nav-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
 #app-content{padding:16px;max-width:1200px;margin:0 auto}
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.nivel-tabs{display:flex;gap:6px;margin-bottom:10px}
+.nivel-tab{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--gray-300);background:var(--white);color:var(--gray-500);transition:all .15s}
+.nivel-tab:hover{border-color:var(--blue);color:var(--blue)}
+.nivel-tab.nt-n1{border-color:var(--basico);color:var(--basico);background:#fdecea}
+.nivel-tab.nt-n2{border-color:#1565c0;color:#1565c0;background:#e3f2fd}
+.nivel-tab.nt-n3{border-color:var(--green);color:var(--green);background:var(--green-l)}
+.nivel-tab.inactive{background:var(--white);color:var(--gray-400);border-color:var(--gray-200)}
+#foro-badge{display:none;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--blue-l);border:1px solid #bfdbfe;font-size:12px;color:var(--blue-d);margin-top:8px}
+#foro-badge.show{display:flex}
+#foro-badge strong{font-weight:600}
 .matrix-wrap{overflow-x:auto}
 table.matrix{width:100%;border-collapse:collapse;font-size:11px}
 table.matrix th,table.matrix td{border:1px solid var(--gray-200);padding:5px 7px;vertical-align:middle}
@@ -91,8 +101,9 @@ tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;tex
 .hist-meta{font-size:10px;color:var(--gray-400);display:flex;gap:10px;flex-wrap:wrap}
 .hist-meta span{display:flex;align-items:center;gap:3px}
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700}
-.b-basico{background:#fdecea;color:var(--basico)}
-.b-bronce{background:#fdf3e3;color:var(--bronce)}
+.b-N1,.b-basico{background:#fdecea;color:var(--basico)}
+.b-N2{background:#e3f2fd;color:#1565c0}
+.b-N3,.b-bronce{background:var(--green-l);color:var(--green)}
 .b-plata{background:#eaecee;color:var(--plata)}
 .b-oro{background:#fefce8;color:var(--oro)}
 .b-admin{background:#fce7f3;color:#9d174d}
@@ -160,19 +171,31 @@ tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;tex
 
     <div id="tab-eval" class="screen active">
       <div class="card" style="padding:16px;margin-bottom:14px">
-        <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-forms"></i> Datos del foro</h2>
-        <div class="form-grid">
-          <div><label>Fecha</label><input type="date" id="f-fecha"/></div>
-          <div><label>Área</label><input type="text" id="f-area" placeholder="Ej: Línea A"/></div>
-          <div><label>Nombre del foro</label><input type="text" id="f-nombre" placeholder="Ej: Foro 01"/></div>
+        <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-building"></i> Seleccionar foro</h2>
+        <label style="margin-bottom:6px">Filtrar por nivel</label>
+        <div class="nivel-tabs" id="nivel-tabs">
+          <button class="nivel-tab nt-n1" onclick="filterNivel('N1')">N1</button>
+          <button class="nivel-tab nt-n2 inactive" onclick="filterNivel('N2')">N2</button>
+          <button class="nivel-tab nt-n3 inactive" onclick="filterNivel('N3')">N3</button>
+        </div>
+        <label for="f-foro">Foro</label>
+        <select id="f-foro" onchange="onForoChange()">
+          <option value="">— Selecciona un foro —</option>
+        </select>
+        <div id="foro-badge">
+          <i class="ti ti-check"></i>
+          <span>Foro seleccionado: <strong id="foro-badge-txt"></strong></span>
+          <span style="margin-left:auto;font-size:10px;color:var(--gray-400)" id="foro-badge-nivel"></span>
         </div>
       </div>
-      <div class="level-summary" id="level-summary">
-        <div class="lev-box lb-basico"><div class="lv-name">🔴 Básico</div><div class="lv-score" id="sum-BASICO">0</div><div class="lv-max" id="sum-max-BASICO">/ 0 secciones</div></div>
-        <div class="lev-box lb-bronce"><div class="lv-name">🟤 Bronce</div><div class="lv-score" id="sum-BRONCE">0</div><div class="lv-max" id="sum-max-BRONCE">/ 0 secciones</div></div>
-        <div class="lev-box lb-plata"><div class="lv-name">⚪ Plata</div><div class="lv-score" id="sum-PLATA">0</div><div class="lv-max" id="sum-max-PLATA">/ 0 secciones</div></div>
-        <div class="lev-box lb-oro"><div class="lv-name">🟡 Oro</div><div class="lv-score" id="sum-ORO">0</div><div class="lv-max" id="sum-max-ORO">/ 0 secciones</div></div>
+
+      <div class="level-summary">
+        <div class="lev-box lb-basico"><div class="lv-name">🔴 Básico</div><div class="lv-score" id="sum-BASICO">0</div><div class="lv-max" id="sum-max-BASICO">/ 0 secc.</div></div>
+        <div class="lev-box lb-bronce"><div class="lv-name">🟤 Bronce</div><div class="lv-score" id="sum-BRONCE">0</div><div class="lv-max" id="sum-max-BRONCE">/ 0 secc.</div></div>
+        <div class="lev-box lb-plata"><div class="lv-name">⚪ Plata</div><div class="lv-score" id="sum-PLATA">0</div><div class="lv-max" id="sum-max-PLATA">/ 0 secc.</div></div>
+        <div class="lev-box lb-oro"><div class="lv-name">🟡 Oro</div><div class="lv-score" id="sum-ORO">0</div><div class="lv-max" id="sum-max-ORO">/ 0 secc.</div></div>
       </div>
+
       <div class="card" style="padding:16px;margin-bottom:14px">
         <h2 style="font-size:13px;font-weight:600;margin-bottom:10px"><i class="ti ti-table"></i> Matriz de evaluación</h2>
         <div class="alert a-info" style="font-size:11px"><i class="ti ti-info-circle"></i> Marca los criterios cumplidos. Cuando <strong>todos</strong> los criterios de un nivel en una sección están marcados, esa sección suma <strong>1 punto</strong> en ese nivel.</div>
@@ -191,7 +214,15 @@ tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;tex
       </div>
       <div class="card" style="padding:13px;margin-bottom:12px">
         <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end">
-          <div style="flex:1;min-width:140px"><label>Buscar área / foro</label><input type="text" id="h-search" placeholder="Escribir…" oninput="renderHistory()"/></div>
+          <div style="flex:0 0 110px"><label>Nivel</label>
+            <select id="h-nivel" onchange="renderHistory()">
+              <option value="">Todos</option>
+              <option value="N1">N1</option>
+              <option value="N2">N2</option>
+              <option value="N3">N3</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:130px"><label>Buscar foro</label><input type="text" id="h-search" placeholder="Escribir…" oninput="renderHistory()"/></div>
           <button onclick="loadHistory()" style="align-self:flex-end"><i class="ti ti-refresh"></i> Recargar</button>
         </div>
       </div>
@@ -215,7 +246,7 @@ tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;tex
           </div>
         </div>
         <div id="adm-crit-list"></div>
-        <div class="flex-end"><button class="btn-s" onclick="admSaveCrit()"><i class="ti ti-device-floppy"></i> Guardar cambios en Firebase</button></div>
+        <div class="flex-end"><button class="btn-s" onclick="admSaveCrit()"><i class="ti ti-device-floppy"></i> Guardar en Firebase</button></div>
       </div>
       <div class="card" style="padding:16px">
         <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-users"></i> Empleados</h2>
@@ -233,68 +264,108 @@ tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;tex
 <div id="toast"></div>
 
 <script>
-const MATRIX_DEFAULT = [
-  { id:1, nombre:"Desempeño: definición",
+const FOROS=[
+  {nivel:"N1",nombre:"Spares Apt"},
+  {nivel:"N1",nombre:"A220 Galleys G1 +APT"},
+  {nivel:"N1",nombre:"A220 Galleys G2 &G4 +APT"},
+  {nivel:"N1",nombre:"Boeing 787 - Secondary APT"},
+  {nivel:"N1",nombre:"A220 Galleys/Small Mnts APT"},
+  {nivel:"N1",nombre:"A320-Cascades APT"},
+  {nivel:"N1",nombre:"A220-LAVS Dual APT"},
+  {nivel:"N1",nombre:"Airbus Others A350 APT"},
+  {nivel:"N1",nombre:"Comac APT"},
+  {nivel:"N1",nombre:"CNC 3X & 5X APT"},
+  {nivel:"N1",nombre:"Boeing 787 - Final APT"},
+  {nivel:"N1",nombre:"A220 - F2F Fill & Fair Paint APT"},
+  {nivel:"N1",nombre:"A220 - Ship Loose APT"},
+  {nivel:"N1",nombre:"Ducts/Upholders APT"},
+  {nivel:"N1",nombre:"A220 - F2F Fill & Fair Décor APT"},
+  {nivel:"N1",nombre:"A220 - F2F Secondary(Inserts,Bonding)APT"},
+  {nivel:"N1",nombre:"A220 - Secondary(Insert,Bonding)APT"},
+  {nivel:"N1",nombre:"Admin - Whs Incoming Insp APT"},
+  {nivel:"N1",nombre:"Admin - Whs Recive APT"},
+  {nivel:"N1",nombre:"Primary Process - Layup"},
+  {nivel:"N1",nombre:"A220 - LAVS Single APT"},
+  {nivel:"N1",nombre:"Airbus Others A330/A220 Countertops APT"},
+  {nivel:"N1",nombre:"Primary Process - Mach Shop APT"},
+  {nivel:"N2",nombre:"WHS"},
+  {nivel:"N2",nombre:"Boeing"},
+  {nivel:"N2",nombre:"A220 F2F"},
+  {nivel:"N2",nombre:"A220 Galleys"},
+  {nivel:"N2",nombre:"A220 Ship Loose"},
+  {nivel:"N2",nombre:"AirBus Other"},
+  {nivel:"N2",nombre:"COMAC"},
+  {nivel:"N2",nombre:"A320 Cascades"},
+  {nivel:"N2",nombre:"Primary Process CNC/Layup/Press"},
+  {nivel:"N2",nombre:"Primary Process Metal Works"},
+  {nivel:"N2",nombre:"Legacy"},
+  {nivel:"N2",nombre:"A220 LAVS"},
+  {nivel:"N3",nombre:"N3"}
+];
+
+const MATRIX_DEFAULT=[
+  {id:1,nombre:"Desempeño: definición",
     BASICO:["La zona ha identificado su rendimiento general (la 'Y') (Productividad).","Los indicadores SQCDPI (la 'X'). Estos KPIs se validan con el equipo. Se identifican el indicador S, y al menos uno entre QCD.","Cada indicador debe incluir una meta (objetivo medible visible en el gráfico).","Los valores para que las situaciones son Rojo – NO OK y Verde – Correcto."],
     BRONCE:["El desempeño general, su meta y su tendencia se monitorean mensualmente y es visible.","Todos los indicadores SQCDPI están definidos, cada uno con su meta, que proporciona un límite para detectar desviaciones.","La tendencia móvil de seis meses de cada indicador SQCDPI es visible."],
     PLATA:["El rendimiento global se logra de forma continua de seis meses.","El rendimiento global monitorizado y sus objetivos están alineados con los objetivos del sitio/división/empresa.","Se desarrolla un desglose del KPI entre el rendimiento global monitorizado y el seguimiento de rendimiento global en los niveles inferiores de QRQC."],
     ORO:["El rendimiento global mejora al menos un 20% cada año.","Su objetivo se revisa anualmente en función de los desafíos de la zona."]
   },
-  { id:2, nombre:"Desempeño: Aplicación / Análisis",
+  {id:2,nombre:"Desempeño: Aplicación / Análisis",
     BASICO:["Los indicadores SQCDPI se revisan diariamente haciendo preguntas al equipo.","Los miembros del equipo pueden identificar y reportar desviaciones por sí mismos.","En caso de desviación, se formaliza una acción de caracterización y contención en el QRAP."],
     BRONCE:["Cuando un indicador SQCDPI está de forma constante verde, el responsable realiza un OJT para confirmar que no se puede mejorar y que el equipo sabe cómo identificar un nuevo indicador.","Cuando el desempeño general mejora, o está en rojo constante, el equipo sabe revisar la definición de los indicadores SQCDPI: el objetivo es retar la madurez de sus procesos de resolución de problemas.","Este análisis, realizado trimestralmente con el equipo, destaca los avances logrados y permite tomar acciones de mejora cuando sea necesario. Estas acciones están formalizadas en el plan de acciones de mejora QRQC.","Cada desviación reportada se caracteriza, seguida de una acción sistemática de contención formalizada en el QRAP o en la junta de desviación/contención.","Dependiendo del impacto de la desviación (consecuencia), se realiza un análisis de causa raíz: en el QRAP en nivel 1 / con una Resolución de Problemas en el nivel 2."],
     PLATA:["Cuando se alcanza el rendimiento global durante un período móvil de 6 meses, el equipo revisa su alcance y/o nivel objetivo para permitir una mejora continua.","Cuando el rendimiento global no se alcanza durante un período móvil de 6 meses, se realizan y documentan acciones de mejora para el proceso QRQC en el visual 'Acciones de Mejora QRQC'.","Este análisis, realizado mensualmente con el equipo, destaca los avances logrados y permite tomar acciones de mejora cuando sea necesario. Estas acciones se formalizan en el plan de acción de mejora de QRQC."],
     ORO:["Cuando el rendimiento global mejora al menos un 20% durante un período móvil de 12 meses, el equipo revisa su alcance y/o nivel objetivo para permitir la mejora continua.","Cuando el rendimiento global no se alcanza durante un período móvil de 12 meses, se realizan y documentan acciones de mejora para el proceso QRQC en el visual 'Acciones de Mejora QRQC'."]
   },
-  { id:3, nombre:"QRQC Reseñas",
+  {id:3,nombre:"QRQC Reseñas",
     BASICO:["Existe una rutina diaria de QRQC para mejorar el rendimiento basada en la resolución de los problemas reportados.","Se realiza conforme a los Términos de Referencia y al estándar de Gestión Visual.","El rendimiento, el monitoreo de los indicadores SQCDPI identificados y las acciones tomadas son visibles de forma permanente en el QRQC Visual.","El QRQC Visual es accesible tanto para los miembros del equipo como para cualquiera que pase por la zona.","El área está dedicada y es distinta de las zonas de seguimiento de información/producción y situado en proximidad inmediata a las actividades del equipo.","El líder y todo el equipo participan.","La iniciación de las Resolución de Problemas se decide durante la sesión QRQC con los colaboradores en función de criterios compartidos."],
     BRONCE:["Las desviaciones se informan a medida que ocurren y se actualiza el pizarron.","El equipo se desafía a sí mismo en el progreso del procedimiento para asegurarse de que se complete dentro del tiempo asignado, cumplen con el tiempo estimado.","Al menos una vez al año, el equipo evalúa la madurez del QRQC y sus rutinas: las acciones de mejora se completan en la tabla 'Acciones de Mejora QRQC'.","Las acciones identificadas están claramente formuladas en el QRAP o 'Desviaciones/panel de contención', y asignadas a una o más personas presentes con un plazo.","El seguimiento de la acción (QRAP o 'lista de desviaciones/contención') no incluye una fecha pasada. Si no se cumple un compromiso, la acción se reprograma, entendiendo por qué la fecha de compromiso no pudo cumplirse.","Las reglas de escalación son conocidas y aplicadas.","En el nivel 2 y superiores, las soluciones de problemas se comparten durante las revisiones QRQC, presentando su progreso mediante hitos. La planificación por hitos es visible en los pasos de resolución de problemas.","Si el líder está ausente, la revisión la realiza el equipo."],
     PLATA:["El responsable y el equipo desafían la aplicación adecuada de metodologías de 'Resolución de Problemas', proporcionando pruebas para presentar los resultados de cada paso, junto con la finalización de la Formación en el Puesto de Trabajo (OJT).","Al menos una vez por semestre, el equipo realiza una evaluación de la madurez del QRQC y su rutina.","Las acciones de mejora se añaden entonces a la tabla 'Acciones de Mejora QRQC'.","Hay un plan de acción con los puntos que se han redactado en la última semana."],
     ORO:["Al menos una vez al mes, el equipo realiza una evaluación de la madurez y sus rutinas del QRQC; las acciones de mejora se registran en el tablero 'QRQC Improvement Actions'.","Los participantes de QRQC que no han cumplido sus compromisos (entregables/plazos de acción) presentan los problemas encontrados y las acciones tomadas para volver a la normalidad."]
   },
-  { id:4, nombre:"Detente en la primera desviación y caracterización",
+  {id:4,nombre:"Detente en la primera desviación y caracterización",
     BASICO:["Cuando se detecta una desviación del estándar, la persona que ha detectado la desviación se detiene para reaccionar (para alertar, caracterizar y contener).","Los problemas se describen al menos comparando la mala situación con el estándar escrito o no escrito (práctico).","Esta caracterización se formaliza, como mínimo, durante la revisión en el QRAP o junta de 'Desviación/Contención'."],
     BRONCE:["Para al primer signo de desviación la mayor parte de las veces activa una caracterización formal en el momento de la detección.","Los problemas se caracterizan usando el método 5W2H y los Tres Reales (situación real, lugar real, objeto real) en una hoja de caracterización realizada por la persona que detectó el problema.","Los datos reales se presentan durante la revisión en el momento de compartir la caracterización."],
     PLATA:["Para la primera desviación activa sistemáticamente una caracterización formalizada en el momento de la detección.","La caracterización de las desviaciones (hoja de caracterización) se presenta durante la revisión por la persona que la originó.","La caracterización es entonces cuestionada por el equipo."],
     ORO:["La caracterización incluye la ubicación de ocurrencia, además de la ubicación donde se detectó el problema en el proceso.","Cada miembro del equipo es capaz de caracterizar y con frecuencia realiza caracterizaciones."]
   },
-  { id:5, nombre:"Contención",
+  {id:5,nombre:"Contención",
     BASICO:["El contención es sistemático e implica reanudar la actividad lo antes posible con acciones inmediatas: para el elemento (parte/archivo, etc.) con la anomalía, para trabajos en curso si procede, proteger a los clientes (tanto internos como externos) si procede.","Las desviaciones que podrían afectar a la Seguridad de Vuelos (SMS), anomalías exportadas a clientes o Pérdidas de Alto Potencial se escalan en nivel 3 o superior."],
     BRONCE:["Una evaluación inicial del problema ha hecho posible detectar su punto de aparición (ocurrencia) en el proceso y a partir de ese punto se toma acción. El plan de contención se completa si es necesario.","La contención se formaliza en el QRAP o 'Junta de desviación/contención'. Si se define un modo de funcionamiento temporal, se formaliza en un estándar y se comunica."],
     PLATA:["La contención del trabajo en curso se realiza desde el momento en que el problema ocurre al cliente, y los filtros necesarios se implementan en un plazo de 2 días en el 75% de los casos."],
     ORO:["La contención del trabajo en curso se realiza desde el momento en que el problema ocurre hasta el cliente, implementándose los filtros necesarios en un día en el 90% de los casos."]
   },
-  { id:6, nombre:"Busca causas de ocurrencia Y no detección",
+  {id:6,nombre:"Busca causas de ocurrencia Y no detección",
     BASICO:["El análisis de causa raíz se inicia tan pronto como surge el problema, involucrando a los empleados/operadores relevantes.","La investigación de la causa raíz se realiza en el lugar correcto, basándose en los Tres Reales (situación real, lugar real, objeto real)."],
     BRONCE:["Las causas de la no detección se diferencian claramente de las causas de ocurrencia, para Nivel 2 y Superiores."],
     PLATA:["El análisis de la causa raíz conduce a identificar una causa organizativa o sistémica para mejorar el proceso."],
     ORO:["La causa raíz se identifica en un plazo de 10 días en el 75% de los casos."]
   },
-  { id:7, nombre:"Búsqueda de soluciones y definición del plan de acción",
+  {id:7,nombre:"Búsqueda de soluciones y definición del plan de acción",
     BASICO:["Las acciones de contención se distinguen claramente de las acciones correctivas destinadas a erradicar las causas raíz.","Las personas relevantes para la solución participan en la selección de las acciones.","Para cada acción, se identifica un propietario que se compromete con el/los entregable(s) y los plazos."],
     BRONCE:["Las soluciones conducen a la mejora del proceso en cuestión y a la modificación de un estándar (visual 5S, materiales de tutoría/formación, procedimientos, etc.).","Las acciones se desglosan en pasos elementales para asegurar una gestión dinámica y capturar desviaciones."],
     PLATA:["La fecha objetivo para cada acción elemental es inferior a 2 días.","Las acciones a medio plazo (> 1 mes) o proyectos identificados se transfieren al plan de unidad/función y se gestionan dentro de las rutinas asociadas."],
     ORO:["La fecha objetivo para cada acción elemental es inferior a 1 día.","El plan de acción para erradicar las causas raíz se define en un plazo de 10 días laborables en el 75% de los casos."]
   },
-  { id:8, nombre:"Implementación del plan de acción",
+  {id:8,nombre:"Implementación del plan de acción",
     BASICO:["Las acciones se llevan a cabo según el calendario. Cualquier desviación del calendario se comunica durante la revisión y se fija una nueva fecha de compromiso."],
     BRONCE:["El progreso de las acciones se revisa en la gemba y se comparte con todo el equipo (OJT)."],
     PLATA:["Las acciones para erradicar las causas raíz se completan en un máximo de 20 días laborables en el 75% de los casos."],
     ORO:["Cada acción elemental se resuelve en un plazo de 24 horas.","Las acciones para erradicar las causas raíz se completan en un máximo de 20 días laborables en el 90% de los casos."]
   },
-  { id:9, nombre:"Verificación de la efectividad de la acción",
+  {id:9,nombre:"Verificación de la efectividad de la acción",
     BASICO:["La efectividad de las acciones se comprueba en los campos durante su implementación."],
     BRONCE:["Según la gravedad del problema, se implementa un plan de verificación (por ejemplo, acciones de seguimiento, auditorías, etc.) para asegurar que el problema no haya reaparecido.","El equipo evalúa si la acción debe ser extensiva a procesos similares y gestiona las acciones adecuadas."],
     PLATA:["Las acciones se completan a tiempo en el 75% de los casos y en menos de 20 días.","En el 75% de los casos, no hay recurrencia tras resolver problemas.","En el 75% de los casos, las Soluciones de Problemas conducen a la creación, validación y difusión de Tarjetas de Lecciones Aprendidas."],
     ORO:["El 100% de las acciones se completan a tiempo.","En el 90% de los casos, no hay recurrencia tras la resolución de problemas.","El análisis de la necesidad de implementación transversal más allá del alcance del equipo se realiza en el 100% de los casos en el nivel 2 o superior, y se toman las acciones en consecuencia (documentos operativos, análisis de riesgos/proceso de producto FMEA, etc.)."]
   },
-  { id:10, nombre:"Comportamiento Liderazgo",
+  {id:10,nombre:"Comportamiento Liderazgo",
     BASICO:["El líder ve cada problema como una oportunidad de mejora.","Cuando se enfrenta a un problema, el líder mantiene una actitud positiva para animar al equipo.","Son atentos, identifican dificultades y ofrecen ayuda en el terreno demostrando a su equipo cómo proceder (Formación en el puesto de trabajo, OJT)."],
     BRONCE:["El responsable anima a todos los miembros del equipo, y a los miembros de QRQC de nivel inferior, a practicar la detención ante la primera señal de desviación y abordarla.","Practica la formación en el puesto de trabajo (OJT), que puede llevarse a cabo según sea necesario, a través de las distintas etapas de resolución de problemas.","El gestor desafía al equipo a utilizar datos reales para tomar decisiones basadas en hechos.","El responsable elogia explícitamente al equipo por sus éxitos o experiencias de aprendizaje.","En caso de escalada, el responsable desafía al QRQC de nivel superior a obtener una respuesta rápida y comunicarla al equipo."],
     PLATA:["El responsable se asegura de que el equipo (especialmente la persona que detectó el problema) esté informado del progreso en la resolución del problema.","El responsable desafía y apoya al equipo para que cada miembro contribuya a la resolución del problema, como se puede ver en el panel QRAP, el panel de Desviación/Contención o los pasos de Resolución del Problema."],
     ORO:["Los miembros del equipo se desafían mutuamente a diario en el proceso y operan de forma autónoma.","El 75% de las desviaciones se abordan de forma independiente en el nivel donde fueron detectadas."]
   }
 ];
+
 const LEVELS=["BASICO","BRONCE","PLATA","ORO"];
 const LEVEL_LABELS={BASICO:"Básico",BRONCE:"Bronce",PLATA:"Plata",ORO:"Oro"};
 const LEVEL_CSS={BASICO:"basico",BRONCE:"bronce",PLATA:"plata",ORO:"oro"};
@@ -309,6 +380,7 @@ const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
 let employees={},criteria=[],evals=[],currentUser=null,editCrit=null;
+let selectedNivel='N1';
 
 function toast(msg,type='info'){const el=document.getElementById('toast');const c={info:'#1a6ef5',success:'#16a34a',danger:'#dc2626',warning:'#d97706'};el.style.background=c[type]||c.info;el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
 window.toast=toast;
@@ -326,7 +398,7 @@ async function fbDeleteEval(fbId){await deleteDoc(doc(db,'evaluations',fbId));}
 async function initApp(){
   showLoader('Conectando con Firebase…');
   try{[employees,criteria]=await Promise.all([fbGetEmployees(),fbGetCriteria()]);hideLoader();document.getElementById('login-wrap').style.display='flex';}
-  catch(e){console.error(e);document.getElementById('fb-loader').querySelector('p').textContent='Error al conectar con Firebase. Verifica tu conexión.';}
+  catch(e){console.error(e);document.getElementById('fb-loader').querySelector('p').textContent='Error al conectar. Verifica tu conexión.';}
 }
 initApp();
 
@@ -339,18 +411,35 @@ window.doLogin=async function(){
   document.getElementById('app-wrap').style.display='block';
   document.getElementById('emp-tag').textContent='Emp: '+emp;
   if(currentUser.role==='admin'){document.getElementById('btn-adm-hdr').style.display='';document.getElementById('tab-btn-admin').style.display='';}
-  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
-  buildMatrix();showTab('eval');
+  filterNivel('N1');buildMatrix();showTab('eval');
 };
 
 window.doLogout=function(){currentUser=null;document.getElementById('app-wrap').style.display='none';document.getElementById('login-wrap').style.display='flex';document.getElementById('emp-in').value='';document.getElementById('btn-adm-hdr').style.display='none';document.getElementById('tab-btn-admin').style.display='none';};
 
 window.showTab=function(name){['eval','history','admin'].forEach(t=>{document.getElementById('tab-'+t).classList.toggle('active',t===name);const b=document.getElementById('tab-btn-'+t);if(b)b.classList.toggle('active',t===name);});if(name==='history')loadHistory();if(name==='admin'){renderAdminCrit();renderEmpList();}};
 
+window.filterNivel=function(n){
+  selectedNivel=n;
+  document.querySelectorAll('.nivel-tab').forEach(btn=>{
+    btn.textContent.trim()===n?btn.classList.remove('inactive'):btn.classList.add('inactive');
+  });
+  const sel=document.getElementById('f-foro');
+  sel.innerHTML='<option value="">— Selecciona un foro —</option>';
+  FOROS.filter(f=>f.nivel===n).forEach(f=>{const opt=document.createElement('option');opt.value=f.nombre;opt.textContent=f.nombre;sel.appendChild(opt);});
+  document.getElementById('foro-badge').classList.remove('show');
+};
+
+window.onForoChange=function(){
+  const val=document.getElementById('f-foro').value;
+  const badge=document.getElementById('foro-badge');
+  if(val){document.getElementById('foro-badge-txt').textContent=val;document.getElementById('foro-badge-nivel').textContent=selectedNivel;badge.classList.add('show');}
+  else{badge.classList.remove('show');}
+};
+
 function buildMatrix(){
   const secs=criteria;
   const possible=secs.reduce((a,s)=>a+LEVELS.filter(l=>s[l]&&s[l].length>0).length,0);
-  LEVELS.forEach(lev=>{const cnt=secs.filter(s=>s[lev]&&s[lev].length>0).length;const el=document.getElementById('sum-max-'+lev);if(el)el.textContent='/ '+cnt+' secciones';const sc=document.getElementById('sum-'+lev);if(sc)sc.textContent='0';});
+  LEVELS.forEach(lev=>{const cnt=secs.filter(s=>s[lev]&&s[lev].length>0).length;const el=document.getElementById('sum-max-'+lev);if(el)el.textContent='/ '+cnt+' secc.';const sc=document.getElementById('sum-'+lev);if(sc)sc.textContent='0';});
   let html='<table class="matrix"><thead><tr><th style="width:90px">Sección</th><th style="width:52px">Nivel</th><th>Criterio de evaluación</th><th style="min-width:30px">✓</th><th style="min-width:50px">Pts secc.</th></tr></thead><tbody>';
   secs.forEach(sec=>{
     let firstRow=true;
@@ -359,12 +448,12 @@ function buildMatrix(){
       const crit=sec[lev]||[];if(!crit.length)return;
       crit.forEach((cr,ci)=>{
         html+='<tr>';
-        if(firstRow&&ci===0) html+=`<td class="sec-label s-${LEVEL_CSS[LEVELS[0]]}" rowspan="${totalRows}" style="vertical-align:middle">${sec.nombre}</td>`;
-        if(ci===0) html+=`<td class="lev-label l-${LEVEL_CSS[lev]}" rowspan="${crit.length}" style="vertical-align:middle">${LEVEL_LABELS[lev]}</td>`;
+        if(firstRow&&ci===0)html+=`<td class="sec-label s-${LEVEL_CSS[LEVELS[0]]}" rowspan="${totalRows}" style="vertical-align:middle">${sec.nombre}</td>`;
+        if(ci===0)html+=`<td class="lev-label l-${LEVEL_CSS[lev]}" rowspan="${crit.length}" style="vertical-align:middle">${LEVEL_LABELS[lev]}</td>`;
         const key=`${sec.id}_${lev}_${ci}`;
         html+=`<td class="criterion-text${ci%2===0?'':' odd'}">${cr}</td>`;
         html+=`<td class="chk-cell"><input type="checkbox" id="chk_${key}" onchange="onCheck('${sec.id}')"/></td>`;
-        if(firstRow&&ci===0) html+=`<td class="sec-score score-0" rowspan="${totalRows}" id="score-${sec.id}" style="vertical-align:middle">—</td>`;
+        if(firstRow&&ci===0)html+=`<td class="sec-score score-0" rowspan="${totalRows}" id="score-${sec.id}" style="vertical-align:middle">—</td>`;
         html+='</tr>';if(ci===0)firstRow=false;
       });
     });
@@ -374,31 +463,30 @@ function buildMatrix(){
 }
 
 window.onCheck=function(secId){recalcSection(secId);recalcGrand();};
-
 function recalcSection(secId){const sec=criteria.find(s=>String(s.id)===String(secId));if(!sec)return;let pts=0,possible=0;LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;possible++;const done=crit.every((_,ci)=>{const el=document.getElementById(`chk_${secId}_${lev}_${ci}`);return el&&el.checked;});if(done)pts++;});const cell=document.getElementById(`score-${secId}`);if(cell){cell.textContent=pts+' / '+possible;cell.className='sec-score '+(pts>0?'score-ok':'score-0');}}
 function recalcAll(){criteria.forEach(s=>recalcSection(s.id));recalcGrand();}
 function recalcGrand(){let total=0,possible=0;const levTotals={BASICO:0,BRONCE:0,PLATA:0,ORO:0};criteria.forEach(sec=>{LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;possible++;const done=crit.every((_,ci)=>{const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`);return el&&el.checked;});if(done){total++;levTotals[lev]++;}});});const el=document.getElementById('grand-total');if(el)el.textContent=total+' / '+possible;LEVELS.forEach(lev=>{const sc=document.getElementById('sum-'+lev);if(sc)sc.textContent=levTotals[lev];});}
 
-window.resetEval=function(){document.getElementById('f-area').value='';document.getElementById('f-nombre').value='';document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];buildMatrix();};
+window.resetEval=function(){document.getElementById('f-foro').value='';document.getElementById('foro-badge').classList.remove('show');filterNivel('N1');buildMatrix();};
 
 window.saveEval=async function(){
-  const fecha=document.getElementById('f-fecha').value;
-  const area=document.getElementById('f-area').value.trim();
-  const nombre=document.getElementById('f-nombre').value.trim();
-  if(!fecha||!area||!nombre){toast('Completa Fecha, Área y Nombre del foro','danger');return;}
+  const foro=document.getElementById('f-foro').value;
+  if(!foro){toast('Selecciona un foro antes de guardar','danger');return;}
+  const fechaISO=new Date().toISOString().split('T')[0];
   const secResults=[];let grandTotal=0,grandPossible=0;const levTotals={BASICO:0,BRONCE:0,PLATA:0,ORO:0};
   criteria.forEach(sec=>{const levData=[];LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;const items=crit.map((cr,ci)=>{const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`);return{texto:cr,checked:el?el.checked:false};});const complete=items.every(i=>i.checked);if(complete){grandTotal++;levTotals[lev]++;}grandPossible++;levData.push({nivel:lev,items,complete});});secResults.push({id:sec.id,nombre:sec.nombre,niveles:levData,pts:levData.filter(l=>l.complete).length,possible:levData.length});});
   const pct=grandPossible>0?Math.round(grandTotal/grandPossible*100):0;
-  const record={fecha,area,nombre,total:grandTotal,possible:grandPossible,pct,levTotals,sections:secResults,empleado:currentUser.id};
+  const record={foro,nivelForo:selectedNivel,fecha:fechaISO,total:grandTotal,possible:grandPossible,pct,levTotals,sections:secResults,empleado:currentUser.id};
   try{showLoader('Guardando en Firebase…');await fbSaveEval(record);hideLoader();toast('✓ Guardado — '+grandTotal+'/'+grandPossible+' pts ('+pct+'%)','success');}
-  catch(e){hideLoader();toast('Error al guardar: '+e.message,'danger');}
+  catch(e){hideLoader();toast('Error: '+e.message,'danger');}
 };
 
 window.loadHistory=async function(){showLoader('Cargando historial…');try{evals=await fbGetEvals();hideLoader();renderHistory();}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
 window.renderHistory=function(){
+  const fnivel=document.getElementById('h-nivel').value;
   const ftext=document.getElementById('h-search').value.toLowerCase();
-  const list=evals.filter(e=>!ftext||(e.area.toLowerCase().includes(ftext)||e.nombre.toLowerCase().includes(ftext)));
+  const list=evals.filter(e=>{if(fnivel&&e.nivelForo!==fnivel)return false;if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;return true;});
   if(!list.length){document.getElementById('history-list').innerHTML='<div class="empty"><i class="ti ti-clipboard-off"></i>No hay evaluaciones registradas.</div>';return;}
   const isAdmin=currentUser&&currentUser.role==='admin';
   let html='';
@@ -407,48 +495,36 @@ window.renderHistory=function(){
     const chips=(e.sections||[]).map(sec=>`<span class="sec-chip ${sec.pts===sec.possible?'chip-ok':'chip-no'}" title="${sec.nombre}">${sec.pts}/${sec.possible}</span>`).join('');
     const levBreak=LEVELS.map(lev=>{const lt=e.levTotals||{};const done=lt[lev]||0;const tot=(e.sections||[]).filter(s=>s.niveles&&s.niveles.find(x=>x.nivel===lev)).length;return tot?`<span class="badge b-${LEVEL_CSS[lev]}">${LEVEL_LABELS[lev]}: ${done}/${tot}</span>`:''}).join(' ');
     const fechaStr=e.createdAt?.toDate?e.createdAt.toDate().toLocaleDateString('es-MX'):(e.fecha||'');
-    html+=`<div class="hist-card"><div class="hist-row"><span style="font-weight:600;font-size:13px;color:var(--gray-800)">${e.nombre}</span><div style="display:flex;align-items:center;gap:9px"><span style="font-size:22px;font-weight:700;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span><span style="font-size:11px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.possible} pts</span>${isAdmin?`<button class="btn-g" style="color:var(--red);border-color:#fca5a5;padding:3px 6px" onclick="delEval('${e.fbId}')"><i class="ti ti-trash"></i></button>`:''}</div></div><div class="hist-meta"><span><i class="ti ti-calendar"></i>${e.fecha}</span><span><i class="ti ti-building"></i>${e.area}</span><span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span><span><i class="ti ti-clock"></i>${fechaStr}</span></div><div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">${levBreak}</div><div class="sec-chips">${chips}</div></div>`;
+    html+=`<div class="hist-card"><div class="hist-row"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge b-${e.nivelForo||'N1'}">${e.nivelForo||'—'}</span><span style="font-weight:600;font-size:13px;color:var(--gray-800)">${e.foro||e.nombre||'—'}</span></div><div style="display:flex;align-items:center;gap:9px"><span style="font-size:22px;font-weight:700;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span><span style="font-size:11px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.possible} pts</span>${isAdmin?`<button class="btn-g" style="color:var(--red);border-color:#fca5a5;padding:3px 6px" onclick="delEval('${e.fbId}')"><i class="ti ti-trash"></i></button>`:''}</div></div><div class="hist-meta"><span><i class="ti ti-calendar"></i>${fechaStr}</span><span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span></div><div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">${levBreak}</div><div class="sec-chips">${chips}</div></div>`;
   });
   document.getElementById('history-list').innerHTML=html;
 };
 
-window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Evaluación eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
+window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
 window.exportExcel=function(){
   if(!evals.length){toast('No hay evaluaciones para exportar','danger');return;}
   const wb=XLSX.utils.book_new();
-  const sum=[['ID','Fecha','Área','Foro','Total','Posible','%','Básico','Bronce','Plata','Oro','Empleado']];
-  evals.forEach(e=>{const lt=e.levTotals||{};sum.push([e.fbId,e.fecha,e.area,e.nombre,e.total,e.possible,e.pct+'%',lt.BASICO||0,lt.BRONCE||0,lt.PLATA||0,lt.ORO||0,e.empleado]);});
+  const sum=[['ID','Fecha','Nivel Foro','Foro','Total','Posible','%','Básico','Bronce','Plata','Oro','Empleado']];
+  evals.forEach(e=>{const lt=e.levTotals||{};sum.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',e.total,e.possible,e.pct+'%',lt.BASICO||0,lt.BRONCE||0,lt.PLATA||0,lt.ORO||0,e.empleado]);});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Resumen');
-  const det=[['ID','Fecha','Área','Foro','Sección','Nivel','Criterio','Cumplido','Sección Completa']];
-  evals.forEach(e=>(e.sections||[]).forEach(sec=>(sec.niveles||[]).forEach(niv=>(niv.items||[]).forEach(it=>det.push([e.fbId,e.fecha,e.area,e.nombre,sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,it.checked?'Sí':'No',niv.complete?'Sí':'No'])))));
+  const det=[['ID','Fecha','Nivel Foro','Foro','Sección','Nivel Matriz','Criterio','Cumplido','Sección Completa']];
+  evals.forEach(e=>(e.sections||[]).forEach(sec=>(sec.niveles||[]).forEach(niv=>(niv.items||[]).forEach(it=>det.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,it.checked?'Sí':'No',niv.complete?'Sí':'No'])))));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),'Detalle');
   XLSX.writeFile(wb,'QRQC_Evaluaciones_'+new Date().toISOString().split('T')[0]+'.xlsx');
   toast('Excel generado','success');
 };
 
 window.renderAdminCrit=function(){const lev=document.getElementById('adm-nivel').value;editCrit=JSON.parse(JSON.stringify(criteria));buildAdminHTML(lev);};
-
-function buildAdminHTML(lev){
-  let html='';
-  editCrit.forEach((sec,si)=>{
-    const items=sec[lev]||[];
-    html+=`<div class="crit-block"><div class="crit-head"><span style="font-size:10px;color:var(--gray-400);min-width:22px">${si+1}.</span><input type="text" value="${escH(sec.nombre)}" onchange="editCrit[${si}].nombre=this.value" style="font-size:12px"/></div><div class="crit-body">`;
-    items.forEach((cr,ci)=>{html+=`<div class="crit-item-row"><span>${ci+1}.</span><input type="text" value="${escH(cr)}" onchange="editCrit[${si}]['${lev}'][${ci}]=this.value" style="font-size:11px"/><button class="btn-g" style="color:var(--red);padding:2px 5px" onclick="admRemItem(${si},'${lev}',${ci})"><i class="ti ti-x"></i></button></div>`;});
-    html+=`<button style="font-size:11px;margin-top:3px" onclick="admAddItem(${si},'${lev}')"><i class="ti ti-plus"></i> Agregar criterio</button></div></div>`;
-  });
-  document.getElementById('adm-crit-list').innerHTML=html;
-}
+function buildAdminHTML(lev){let html='';editCrit.forEach((sec,si)=>{const items=sec[lev]||[];html+=`<div class="crit-block"><div class="crit-head"><span style="font-size:10px;color:var(--gray-400);min-width:22px">${si+1}.</span><input type="text" value="${escH(sec.nombre)}" onchange="editCrit[${si}].nombre=this.value" style="font-size:12px"/></div><div class="crit-body">`;items.forEach((cr,ci)=>{html+=`<div class="crit-item-row"><span>${ci+1}.</span><input type="text" value="${escH(cr)}" onchange="editCrit[${si}]['${lev}'][${ci}]=this.value" style="font-size:11px"/><button class="btn-g" style="color:var(--red);padding:2px 5px" onclick="admRemItem(${si},'${lev}',${ci})"><i class="ti ti-x"></i></button></div>`;});html+=`<button style="font-size:11px;margin-top:3px" onclick="admAddItem(${si},'${lev}')"><i class="ti ti-plus"></i> Agregar criterio</button></div></div>`;});document.getElementById('adm-crit-list').innerHTML=html;}
 
 window.admAddSec=function(){const lev=document.getElementById('adm-nivel').value;editCrit.push({id:Date.now(),nombre:'Nueva sección',BASICO:[],BRONCE:[],PLATA:[],ORO:[]});buildAdminHTML(lev);};
 window.admRemItem=function(si,lev,ci){editCrit[si][lev].splice(ci,1);buildAdminHTML(lev);};
 window.admAddItem=function(si,lev){if(!editCrit[si][lev])editCrit[si][lev]=[];editCrit[si][lev].push('Nuevo criterio');buildAdminHTML(lev);};
-window.admSaveCrit=async function(){try{showLoader('Guardando criterios en Firebase…');await fbSaveCriteria(editCrit);criteria=JSON.parse(JSON.stringify(editCrit));buildMatrix();hideLoader();toast('✓ Criterios guardados en Firebase','success');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
+window.admSaveCrit=async function(){try{showLoader('Guardando…');await fbSaveCriteria(editCrit);criteria=JSON.parse(JSON.stringify(editCrit));buildMatrix();hideLoader();toast('✓ Criterios guardados','success');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
 window.renderEmpList=function(){let html='';Object.entries(employees).sort().forEach(([id,emp])=>{html+=`<div class="emp-row"><span class="emp-num">${id}</span><span class="badge b-${emp.role}">${emp.role}</span><span style="flex:1;color:var(--gray-500);font-size:11px">${emp.name||''}</span><button class="btn-g" style="color:var(--red);padding:3px 6px" onclick="removeEmp('${id}')" ${id==='9999'?'disabled':''}><i class="ti ti-trash"></i></button></div>`;});document.getElementById('emp-list').innerHTML=html||'<p style="color:var(--gray-400);padding:7px;font-size:11px">Sin empleados</p>';};
-
 window.addEmp=async function(){const id=document.getElementById('new-emp').value.trim();const role=document.getElementById('new-role').value;if(!id){toast('Ingresa un número','danger');return;}if(employees[id]){toast('Ese número ya existe','warning');return;}employees[id]={role,name:'Empleado '+id};try{await fbSaveEmployees(employees);renderEmpList();document.getElementById('new-emp').value='';toast('Empleado '+id+' agregado','success');}catch(e){toast('Error: '+e.message,'danger');}};
-
 window.removeEmp=async function(id){if(id==='9999'){toast('No se puede eliminar el admin principal','danger');return;}if(!confirm('¿Eliminar empleado '+id+'?'))return;delete employees[id];try{await fbSaveEmployees(employees);renderEmpList();toast('Empleado eliminado','warning');}catch(e){toast('Error: '+e.message,'danger');}};
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
