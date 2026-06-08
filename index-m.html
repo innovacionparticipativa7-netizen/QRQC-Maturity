@@ -501,17 +501,107 @@ window.renderHistory=function(){
 
 window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
+/* =====================================================================
+   EXPORTAR EXCEL — 4 hojas: Resumen, Por Sección, Fallas, Detalle
+   ===================================================================== */
 window.exportExcel=function(){
   if(!evals.length){toast('No hay evaluaciones para exportar','danger');return;}
   const wb=XLSX.utils.book_new();
-  const sum=[['ID','Fecha','Nivel Foro','Foro','Total','Posible','%','Básico','Bronce','Plata','Oro','Empleado']];
-  evals.forEach(e=>{const lt=e.levTotals||{};sum.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',e.total,e.possible,e.pct+'%',lt.BASICO||0,lt.BRONCE||0,lt.PLATA||0,lt.ORO||0,e.empleado]);});
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Resumen');
-  const det=[['ID','Fecha','Nivel Foro','Foro','Sección','Nivel Matriz','Criterio','Cumplido','Sección Completa']];
-  evals.forEach(e=>(e.sections||[]).forEach(sec=>(sec.niveles||[]).forEach(niv=>(niv.items||[]).forEach(it=>det.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,it.checked?'Sí':'No',niv.complete?'Sí':'No'])))));
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),'Detalle');
+  const fnivel=document.getElementById('h-nivel').value;
+  const ftext=document.getElementById('h-search').value.toLowerCase();
+  const list=evals.filter(e=>{
+    if(fnivel&&e.nivelForo!==fnivel)return false;
+    if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;
+    return true;
+  });
+
+  /* ── HOJA 1: RESUMEN GENERAL ── */
+  const sum=[['ID','Fecha','Nivel Foro','Foro','Pts Totales','Pts Posibles','%',
+    'Básico (pts)','Básico (posible)','Bronce (pts)','Bronce (posible)',
+    'Plata (pts)','Plata (posible)','Oro (pts)','Oro (posible)','Empleado']];
+  list.forEach(e=>{
+    const lt=e.levTotals||{};
+    const lp={BASICO:0,BRONCE:0,PLATA:0,ORO:0};
+    (e.sections||[]).forEach(sec=>(sec.niveles||[]).forEach(niv=>{lp[niv.nivel]=(lp[niv.nivel]||0)+1;}));
+    sum.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',
+      e.total,e.possible,e.pct+'%',
+      lt.BASICO||0,lp.BASICO||0,
+      lt.BRONCE||0,lp.BRONCE||0,
+      lt.PLATA||0,lp.PLATA||0,
+      lt.ORO||0,lp.ORO||0,
+      e.empleado]);
+  });
+  const ws1=XLSX.utils.aoa_to_sheet(sum);
+  ws1['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:12},{wch:12},{wch:8},
+    {wch:12},{wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Resumen');
+
+  /* ── HOJA 2: PUNTOS POR SECCIÓN ── */
+  const sec2=[['ID','Fecha','Nivel Foro','Foro','Sección',
+    'Básico: checks','Básico: total criterios','Básico: completo',
+    'Bronce: checks','Bronce: total criterios','Bronce: completo',
+    'Plata: checks','Plata: total criterios','Plata: completo',
+    'Oro: checks','Oro: total criterios','Oro: completo',
+    'Pts sección (niveles completos)','Pts posibles sección']];
+  list.forEach(e=>{
+    (e.sections||[]).forEach(sec=>{
+      const levMap={};
+      (sec.niveles||[]).forEach(niv=>{levMap[niv.nivel]=niv;});
+      const row=[e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',sec.nombre];
+      LEVELS.forEach(lev=>{
+        const niv=levMap[lev];
+        if(niv){
+          const checks=(niv.items||[]).filter(i=>i.checked).length;
+          const total=(niv.items||[]).length;
+          row.push(checks,total,niv.complete?'✓':'✗');
+        } else {
+          row.push('—','—','—');
+        }
+      });
+      row.push(sec.pts,sec.possible);
+      sec2.push(row);
+    });
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(sec2);
+  ws2['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},
+    {wch:14},{wch:20},{wch:14},{wch:14},{wch:20},{wch:14},
+    {wch:14},{wch:20},{wch:14},{wch:14},{wch:20},{wch:14},
+    {wch:22},{wch:18}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Por Sección');
+
+  /* ── HOJA 3: FALLAS (criterios NO cumplidos) ── */
+  const fail=[['ID','Fecha','Nivel Foro','Foro','Sección','Nivel Matriz','Criterio fallado','Empleado']];
+  list.forEach(e=>{
+    (e.sections||[]).forEach(sec=>{
+      (sec.niveles||[]).forEach(niv=>{
+        (niv.items||[]).forEach(it=>{
+          if(!it.checked){
+            fail.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',
+              sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,e.empleado]);
+          }
+        });
+      });
+    });
+  });
+  if(fail.length>1){
+    const ws3=XLSX.utils.aoa_to_sheet(fail);
+    ws3['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},{wch:10},{wch:80},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws3,'Fallas');
+  }
+
+  /* ── HOJA 4: DETALLE COMPLETO (todos los criterios) ── */
+  const det=[['ID','Fecha','Nivel Foro','Foro','Sección','Nivel Matriz','Criterio','Cumplido','Sección Completa','Empleado']];
+  list.forEach(e=>(e.sections||[]).forEach(sec=>(sec.niveles||[]).forEach(niv=>(niv.items||[]).forEach(it=>
+    det.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',
+      sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,
+      it.checked?'✓':'✗',niv.complete?'✓':'✗',e.empleado])
+  ))));
+  const ws4=XLSX.utils.aoa_to_sheet(det);
+  ws4['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},{wch:10},{wch:80},{wch:10},{wch:16},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws4,'Detalle');
+
   XLSX.writeFile(wb,'QRQC_Evaluaciones_'+new Date().toISOString().split('T')[0]+'.xlsx');
-  toast('Excel generado','success');
+  toast('Excel generado — 4 hojas','success');
 };
 
 window.renderAdminCrit=function(){const lev=document.getElementById('adm-nivel').value;editCrit=JSON.parse(JSON.stringify(criteria));buildAdminHTML(lev);};
