@@ -43,7 +43,6 @@ label{font-size:11px;font-weight:500;color:var(--gray-500);display:block;margin-
 #login-box h1{font-size:1.25rem;color:var(--gray-800);margin-bottom:3px}
 #login-box p{font-size:11px;color:var(--gray-400);margin-bottom:1.5rem}
 #login-error{color:var(--red);font-size:11px;margin-top:7px;display:none}
-#login-hint{font-size:10px;color:var(--gray-400);margin-top:1rem}
 #app-header{background:#1a2b4a;color:#fff;padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:200}
 .brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
 .brand i{font-size:19px;color:#60a5fa}
@@ -87,6 +86,8 @@ td.sec-score{text-align:center;min-width:42px;font-weight:700;font-family:'IBM P
 td.sec-score.score-0{color:var(--gray-300)}
 td.sec-score.score-ok{color:var(--green)}
 tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;text-align:center;padding:8px}
+/* ── SEPARADOR GRUESO ENTRE SECCIONES ── */
+tr.sec-first-row td{border-top:3px solid #64748b !important;}
 .level-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .lev-box{flex:1;min-width:100px;border-radius:var(--radius-sm);padding:10px 12px;text-align:center;border:1px solid}
 .lev-box.lb-basico{background:#fdecea;border-color:#f5b7b1;color:var(--basico)}
@@ -440,13 +441,15 @@ function buildMatrix(){
   const possible=secs.reduce((a,s)=>a+LEVELS.filter(l=>s[l]&&s[l].length>0).length,0);
   LEVELS.forEach(lev=>{const cnt=secs.filter(s=>s[lev]&&s[lev].length>0).length;const el=document.getElementById('sum-max-'+lev);if(el)el.textContent='/ '+cnt+' secc.';const sc=document.getElementById('sum-'+lev);if(sc)sc.textContent='0';});
   let html='<table class="matrix"><thead><tr><th style="width:90px">Sección</th><th style="width:52px">Nivel</th><th>Criterio de evaluación</th><th style="min-width:30px">✓</th><th style="min-width:50px">Pts secc.</th></tr></thead><tbody>';
-  secs.forEach(sec=>{
+  secs.forEach((sec,secIdx)=>{
     let firstRow=true;
     const totalRows=LEVELS.reduce((a,l)=>a+(sec[l]?sec[l].length:0),0);
     LEVELS.forEach(lev=>{
       const crit=sec[lev]||[];if(!crit.length)return;
       crit.forEach((cr,ci)=>{
-        html+='<tr>';
+        // Añade clase sec-first-row a la primera <tr> de cada sección (excepto la primera)
+        const trClass=(firstRow&&ci===0&&secIdx>0)?'class="sec-first-row"':'';
+        html+=`<tr ${trClass}>`;
         if(firstRow&&ci===0)html+=`<td class="sec-label s-${LEVEL_CSS[LEVELS[0]]}" rowspan="${totalRows}" style="vertical-align:middle">${sec.nombre}</td>`;
         if(ci===0)html+=`<td class="lev-label l-${LEVEL_CSS[lev]}" rowspan="${crit.length}" style="vertical-align:middle">${LEVEL_LABELS[lev]}</td>`;
         const key=`${sec.id}_${lev}_${ci}`;
@@ -466,7 +469,12 @@ function recalcSection(secId){const sec=criteria.find(s=>String(s.id)===String(s
 function recalcAll(){criteria.forEach(s=>recalcSection(s.id));recalcGrand();}
 function recalcGrand(){let total=0,possible=0;const levTotals={BASICO:0,BRONCE:0,PLATA:0,ORO:0};criteria.forEach(sec=>{LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;possible++;const done=crit.every((_,ci)=>{const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`);return el&&el.checked;});if(done){total++;levTotals[lev]++;}});});const el=document.getElementById('grand-total');if(el)el.textContent=total+' / '+possible;LEVELS.forEach(lev=>{const sc=document.getElementById('sum-'+lev);if(sc)sc.textContent=levTotals[lev];});}
 
-window.resetEval=function(){document.getElementById('f-foro').value='';document.getElementById('foro-badge').classList.remove('show');filterNivel('N1');buildMatrix();};
+window.resetEval=function(){
+  document.getElementById('f-foro').value='';
+  document.getElementById('foro-badge').classList.remove('show');
+  filterNivel('N1');
+  buildMatrix();
+};
 
 window.saveEval=async function(){
   const foro=document.getElementById('f-foro').value;
@@ -476,7 +484,14 @@ window.saveEval=async function(){
   criteria.forEach(sec=>{const levData=[];LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;const items=crit.map((cr,ci)=>{const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`);return{texto:cr,checked:el?el.checked:false};});const complete=items.every(i=>i.checked);if(complete){grandTotal++;levTotals[lev]++;}grandPossible++;levData.push({nivel:lev,items,complete});});secResults.push({id:sec.id,nombre:sec.nombre,niveles:levData,pts:levData.filter(l=>l.complete).length,possible:levData.length});});
   const pct=grandPossible>0?Math.round(grandTotal/grandPossible*100):0;
   const record={foro,nivelForo:selectedNivel,fecha:fechaISO,total:grandTotal,possible:grandPossible,pct,levTotals,sections:secResults,empleado:currentUser.id};
-  try{showLoader('Guardando en Firebase…');await fbSaveEval(record);hideLoader();toast('✓ Guardado — '+grandTotal+'/'+grandPossible+' pts ('+pct+'%)','success');}
+  try{
+    showLoader('Guardando en Firebase…');
+    await fbSaveEval(record);
+    hideLoader();
+    toast('✓ Guardado — '+grandTotal+'/'+grandPossible+' pts ('+pct+'%)','success');
+    // ── Limpiar selección y checkboxes después de guardar ──
+    resetEval();
+  }
   catch(e){hideLoader();toast('Error: '+e.message,'danger');}
 };
 
@@ -501,9 +516,6 @@ window.renderHistory=function(){
 
 window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
-/* =====================================================================
-   EXPORTAR EXCEL — 4 hojas: Resumen, Por Sección, Fallas, Detalle
-   ===================================================================== */
 window.exportExcel=function(){
   if(!evals.length){toast('No hay evaluaciones para exportar','danger');return;}
   const wb=XLSX.utils.book_new();
@@ -514,35 +526,17 @@ window.exportExcel=function(){
     if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;
     return true;
   });
-
-  /* ── HOJA 1: RESUMEN GENERAL ── */
-  const sum=[['ID','Fecha','Nivel Foro','Foro','Pts Totales','Pts Posibles','%',
-    'Básico (pts)','Básico (posible)','Bronce (pts)','Bronce (posible)',
-    'Plata (pts)','Plata (posible)','Oro (pts)','Oro (posible)','Empleado']];
+  const sum=[['ID','Fecha','Nivel Foro','Foro','Pts Totales','Pts Posibles','%','Básico (pts)','Básico (posible)','Bronce (pts)','Bronce (posible)','Plata (pts)','Plata (posible)','Oro (pts)','Oro (posible)','Empleado']];
   list.forEach(e=>{
     const lt=e.levTotals||{};
     const lp={BASICO:0,BRONCE:0,PLATA:0,ORO:0};
     (e.sections||[]).forEach(sec=>(sec.niveles||[]).forEach(niv=>{lp[niv.nivel]=(lp[niv.nivel]||0)+1;}));
-    sum.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',
-      e.total,e.possible,e.pct+'%',
-      lt.BASICO||0,lp.BASICO||0,
-      lt.BRONCE||0,lp.BRONCE||0,
-      lt.PLATA||0,lp.PLATA||0,
-      lt.ORO||0,lp.ORO||0,
-      e.empleado]);
+    sum.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',e.total,e.possible,e.pct+'%',lt.BASICO||0,lp.BASICO||0,lt.BRONCE||0,lp.BRONCE||0,lt.PLATA||0,lp.PLATA||0,lt.ORO||0,lp.ORO||0,e.empleado]);
   });
   const ws1=XLSX.utils.aoa_to_sheet(sum);
-  ws1['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:12},{wch:12},{wch:8},
-    {wch:12},{wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12}];
+  ws1['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:12},{wch:12},{wch:8},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:12}];
   XLSX.utils.book_append_sheet(wb,ws1,'Resumen');
-
-  /* ── HOJA 2: PUNTOS POR SECCIÓN ── */
-  const sec2=[['ID','Fecha','Nivel Foro','Foro','Sección',
-    'Básico: checks','Básico: total criterios','Básico: completo',
-    'Bronce: checks','Bronce: total criterios','Bronce: completo',
-    'Plata: checks','Plata: total criterios','Plata: completo',
-    'Oro: checks','Oro: total criterios','Oro: completo',
-    'Pts sección (niveles completos)','Pts posibles sección']];
+  const sec2=[['ID','Fecha','Nivel Foro','Foro','Sección','Básico: checks','Básico: total criterios','Básico: completo','Bronce: checks','Bronce: total criterios','Bronce: completo','Plata: checks','Plata: total criterios','Plata: completo','Oro: checks','Oro: total criterios','Oro: completo','Pts sección (niveles completos)','Pts posibles sección']];
   list.forEach(e=>{
     (e.sections||[]).forEach(sec=>{
       const levMap={};
@@ -550,56 +544,34 @@ window.exportExcel=function(){
       const row=[e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',sec.nombre];
       LEVELS.forEach(lev=>{
         const niv=levMap[lev];
-        if(niv){
-          const checks=(niv.items||[]).filter(i=>i.checked).length;
-          const total=(niv.items||[]).length;
-          row.push(checks,total,niv.complete?'✓':'✗');
-        } else {
-          row.push('—','—','—');
-        }
+        if(niv){const checks=(niv.items||[]).filter(i=>i.checked).length;const total=(niv.items||[]).length;row.push(checks,total,niv.complete?'✓':'✗');}
+        else{row.push('—','—','—');}
       });
       row.push(sec.pts,sec.possible);
       sec2.push(row);
     });
   });
   const ws2=XLSX.utils.aoa_to_sheet(sec2);
-  ws2['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},
-    {wch:14},{wch:20},{wch:14},{wch:14},{wch:20},{wch:14},
-    {wch:14},{wch:20},{wch:14},{wch:14},{wch:20},{wch:14},
-    {wch:22},{wch:18}];
+  ws2['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},{wch:14},{wch:20},{wch:14},{wch:14},{wch:20},{wch:14},{wch:14},{wch:20},{wch:14},{wch:14},{wch:20},{wch:14},{wch:22},{wch:18}];
   XLSX.utils.book_append_sheet(wb,ws2,'Por Sección');
-
-  /* ── HOJA 3: FALLAS (criterios NO cumplidos) ── */
   const fail=[['ID','Fecha','Nivel Foro','Foro','Sección','Nivel Matriz','Criterio fallado','Empleado']];
   list.forEach(e=>{
     (e.sections||[]).forEach(sec=>{
       (sec.niveles||[]).forEach(niv=>{
         (niv.items||[]).forEach(it=>{
-          if(!it.checked){
-            fail.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',
-              sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,e.empleado]);
-          }
+          if(!it.checked){fail.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,e.empleado]);}
         });
       });
     });
   });
-  if(fail.length>1){
-    const ws3=XLSX.utils.aoa_to_sheet(fail);
-    ws3['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},{wch:10},{wch:80},{wch:12}];
-    XLSX.utils.book_append_sheet(wb,ws3,'Fallas');
-  }
-
-  /* ── HOJA 4: DETALLE COMPLETO (todos los criterios) ── */
+  if(fail.length>1){const ws3=XLSX.utils.aoa_to_sheet(fail);ws3['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},{wch:10},{wch:80},{wch:12}];XLSX.utils.book_append_sheet(wb,ws3,'Fallas');}
   const det=[['ID','Fecha','Nivel Foro','Foro','Sección','Nivel Matriz','Criterio','Cumplido','Sección Completa','Empleado']];
   list.forEach(e=>(e.sections||[]).forEach(sec=>(sec.niveles||[]).forEach(niv=>(niv.items||[]).forEach(it=>
-    det.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',
-      sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,
-      it.checked?'✓':'✗',niv.complete?'✓':'✗',e.empleado])
+    det.push([e.fbId,e.fecha,e.nivelForo||'',e.foro||e.nombre||'',sec.nombre,LEVEL_LABELS[niv.nivel],it.texto,it.checked?'✓':'✗',niv.complete?'✓':'✗',e.empleado])
   ))));
   const ws4=XLSX.utils.aoa_to_sheet(det);
   ws4['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},{wch:10},{wch:80},{wch:10},{wch:16},{wch:12}];
   XLSX.utils.book_append_sheet(wb,ws4,'Detalle');
-
   XLSX.writeFile(wb,'QRQC_Evaluaciones_'+new Date().toISOString().split('T')[0]+'.xlsx');
   toast('Excel generado — 4 hojas','success');
 };
