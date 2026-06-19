@@ -88,6 +88,7 @@ td.sec-score.score-ok{color:var(--green)}
 tr.total-row td{background:#1a2b4a;color:#fff;font-weight:700;font-size:12px;text-align:center;padding:8px}
 /* ── SEPARADOR GRUESO ENTRE SECCIONES ── */
 tr.sec-first-row td{border-top:3px solid #64748b !important;}
+  tr.lev-first-row td{border-top:2px dashed #cbd5e1 !important;}
 .level-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .lev-box{flex:1;min-width:100px;border-radius:var(--radius-sm);padding:10px 12px;text-align:center;border:1px solid}
 .lev-box.lb-basico{background:#fdecea;border-color:#f5b7b1;color:var(--basico)}
@@ -448,7 +449,9 @@ function buildMatrix(){
       const crit=sec[lev]||[];if(!crit.length)return;
       crit.forEach((cr,ci)=>{
         // Añade clase sec-first-row a la primera <tr> de cada sección (excepto la primera)
-        const trClass=(firstRow&&ci===0&&secIdx>0)?'class="sec-first-row"':'';
+        const isSecSep=firstRow&&ci===0&&secIdx>0;
+        const isLevSep=ci===0&&!firstRow;
+        const trClass=isSecSep?'class="sec-first-row"':isLevSep?'class="lev-first-row"':'';
         html+=`<tr ${trClass}>`;
         if(firstRow&&ci===0)html+=`<td class="sec-label s-${LEVEL_CSS[LEVELS[0]]}" rowspan="${totalRows}" style="vertical-align:middle">${sec.nombre}</td>`;
         if(ci===0)html+=`<td class="lev-label l-${LEVEL_CSS[lev]}" rowspan="${crit.length}" style="vertical-align:middle">${LEVEL_LABELS[lev]}</td>`;
