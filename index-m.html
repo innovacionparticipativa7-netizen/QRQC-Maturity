@@ -82,6 +82,7 @@ td.criterion-text{color:var(--gray-700);line-height:1.35;font-size:11px}
 td.criterion-text.odd{background:#fafbfc}
 td.chk-cell{text-align:center;min-width:30px}
 td.chk-cell input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--blue)}
+td.chk-cell input[type=checkbox]:disabled{opacity:.3;cursor:not-allowed}
 td.sec-score{text-align:center;min-width:42px;font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:11px}
 td.sec-score.score-0{color:var(--gray-300)}
 td.sec-score.score-ok{color:var(--green)}
@@ -226,6 +227,12 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
           <div style="flex:1;min-width:130px"><label>Buscar foro</label><input type="text" id="h-search" placeholder="Escribir…" oninput="renderHistory()"/></div>
           <button onclick="loadHistory()" style="align-self:flex-end"><i class="ti ti-refresh"></i> Recargar</button>
         </div>
+      </div>
+      <div class="level-summary" id="hist-level-summary">
+        <div class="lev-box lb-basico"><div class="lv-name">🔴 Básico</div><div class="lv-score" id="hsum-BASICO">0</div><div class="lv-max">foros</div></div>
+        <div class="lev-box lb-bronce"><div class="lv-name">🟤 Bronce</div><div class="lv-score" id="hsum-BRONCE">0</div><div class="lv-max">foros</div></div>
+        <div class="lev-box lb-plata"><div class="lv-name">⚪ Plata</div><div class="lv-score" id="hsum-PLATA">0</div><div class="lv-max">foros</div></div>
+        <div class="lev-box lb-oro"><div class="lv-name">🟡 Oro</div><div class="lv-score" id="hsum-ORO">0</div><div class="lv-max">foros</div></div>
       </div>
       <div id="history-list"></div>
     </div>
@@ -467,9 +474,32 @@ function buildMatrix(){
   document.getElementById('matrix-container').innerHTML=html;recalcAll();
 }
 
-window.onCheck=function(secId){recalcSection(secId);recalcGrand();};
+window.onCheck=function(secId){updateGating(secId);recalcSection(secId);recalcGrand();};
+
+// Gating: dentro de una misma sección, un nivel solo se puede marcar
+// si TODOS los criterios del nivel anterior de esa sección ya están marcados.
+// Si se desmarca un criterio de un nivel inferior, se desmarcan y bloquean
+// en cascada los niveles superiores de esa misma sección.
+function updateGating(secId){
+  const sec=criteria.find(s=>String(s.id)===String(secId));
+  if(!sec)return;
+  let prevComplete=true;
+  LEVELS.forEach(lev=>{
+    const crit=sec[lev]||[];
+    if(!crit.length)return; // este nivel no aplica a la sección, no afecta la cadena
+    const boxes=crit.map((_,ci)=>document.getElementById(`chk_${sec.id}_${lev}_${ci}`)).filter(Boolean);
+    if(!prevComplete){
+      boxes.forEach(cb=>{if(cb.checked)cb.checked=false;cb.disabled=true;cb.title='Completa primero el nivel anterior de esta sección';});
+      prevComplete=false;
+    }else{
+      boxes.forEach(cb=>{cb.disabled=false;cb.title='';});
+      prevComplete=boxes.every(cb=>cb.checked);
+    }
+  });
+}
+
 function recalcSection(secId){const sec=criteria.find(s=>String(s.id)===String(secId));if(!sec)return;let pts=0,possible=0;LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;possible++;const done=crit.every((_,ci)=>{const el=document.getElementById(`chk_${secId}_${lev}_${ci}`);return el&&el.checked;});if(done)pts++;});const cell=document.getElementById(`score-${secId}`);if(cell){cell.textContent=pts+' / '+possible;cell.className='sec-score '+(pts>0?'score-ok':'score-0');}}
-function recalcAll(){criteria.forEach(s=>recalcSection(s.id));recalcGrand();}
+function recalcAll(){criteria.forEach(s=>{updateGating(s.id);recalcSection(s.id);});recalcGrand();}
 function recalcGrand(){let total=0,possible=0;const levTotals={BASICO:0,BRONCE:0,PLATA:0,ORO:0};criteria.forEach(sec=>{LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;possible++;const done=crit.every((_,ci)=>{const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`);return el&&el.checked;});if(done){total++;levTotals[lev]++;}});});const el=document.getElementById('grand-total');if(el)el.textContent=total+' / '+possible;LEVELS.forEach(lev=>{const sc=document.getElementById('sum-'+lev);if(sc)sc.textContent=levTotals[lev];});}
 
 window.resetEval=function(){
@@ -500,10 +530,43 @@ window.saveEval=async function(){
 
 window.loadHistory=async function(){showLoader('Cargando historial…');try{evals=await fbGetEvals();hideLoader();renderHistory();}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
+// ── Determina el nivel de madurez más alto alcanzado por una evaluación ──
+// (BASICO/BRONCE/PLATA/ORO) sin traslape: cada foro cuenta una sola vez,
+// en el nivel más alto que tenga completo.
+function getEvalTime(e){
+  if(e.createdAt&&typeof e.createdAt.toDate==='function')return e.createdAt.toDate().getTime();
+  if(e.fecha)return new Date(e.fecha).getTime();
+  return 0;
+}
+function getAchievedLevel(e){
+  const levTotals=e.levTotals||{};
+  const sections=e.sections||[];
+  let achieved=null;
+  LEVELS.forEach(lev=>{
+    const totalForLevel=sections.filter(s=>s.niveles&&s.niveles.some(n=>n.nivel===lev)).length;
+    if(totalForLevel>0&&(levTotals[lev]||0)===totalForLevel){achieved=lev;}
+  });
+  return achieved;
+}
+function computeLevelSummary(list){
+  // Toma la evaluación más reciente de cada foro dentro del listado filtrado
+  const latestByForo={};
+  list.forEach(e=>{
+    const key=e.foro||e.nombre||'—';
+    const t=getEvalTime(e);
+    if(!latestByForo[key]||t>getEvalTime(latestByForo[key]))latestByForo[key]=e;
+  });
+  const counts={BASICO:0,BRONCE:0,PLATA:0,ORO:0};
+  Object.values(latestByForo).forEach(e=>{const lev=getAchievedLevel(e);if(lev)counts[lev]++;});
+  return counts;
+}
+
 window.renderHistory=function(){
   const fnivel=document.getElementById('h-nivel').value;
   const ftext=document.getElementById('h-search').value.toLowerCase();
   const list=evals.filter(e=>{if(fnivel&&e.nivelForo!==fnivel)return false;if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;return true;});
+  const summary=computeLevelSummary(list);
+  LEVELS.forEach(lev=>{const el=document.getElementById('hsum-'+lev);if(el)el.textContent=summary[lev];});
   if(!list.length){document.getElementById('history-list').innerHTML='<div class="empty"><i class="ti ti-clipboard-off"></i>No hay evaluaciones registradas.</div>';return;}
   const isAdmin=currentUser&&currentUser.role==='admin';
   let html='';
