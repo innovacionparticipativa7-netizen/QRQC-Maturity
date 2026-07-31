@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,6 +7,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:13px}
@@ -577,12 +577,126 @@ window.renderHistory=function(){
     const chips=(e.sections||[]).map(sec=>`<span class="sec-chip ${sec.pts===sec.possible?'chip-ok':'chip-no'}" title="${sec.nombre}">${sec.pts}/${sec.possible}</span>`).join('');
     const levBreak=LEVELS.map(lev=>{const lt=e.levTotals||{};const done=lt[lev]||0;const tot=(e.sections||[]).filter(s=>s.niveles&&s.niveles.find(x=>x.nivel===lev)).length;return tot?`<span class="badge b-${LEVEL_CSS[lev]}">${LEVEL_LABELS[lev]}: ${done}/${tot}</span>`:''}).join(' ');
     const fechaStr=e.createdAt?.toDate?e.createdAt.toDate().toLocaleDateString('es-MX'):(e.fecha||'');
-    html+=`<div class="hist-card"><div class="hist-row"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge b-${e.nivelForo||'N1'}">${e.nivelForo||'—'}</span><span style="font-weight:600;font-size:13px;color:var(--gray-800)">${e.foro||e.nombre||'—'}</span></div><div style="display:flex;align-items:center;gap:9px"><span style="font-size:22px;font-weight:700;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span><span style="font-size:11px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.possible} pts</span>${isAdmin?`<button class="btn-g" style="color:var(--red);border-color:#fca5a5;padding:3px 6px" onclick="delEval('${e.fbId}')"><i class="ti ti-trash"></i></button>`:''}</div></div><div class="hist-meta"><span><i class="ti ti-calendar"></i>${fechaStr}</span><span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span></div><div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">${levBreak}</div><div class="sec-chips">${chips}</div></div>`;
+    html+=`<div class="hist-card"><div class="hist-row"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge b-${e.nivelForo||'N1'}">${e.nivelForo||'—'}</span><span style="font-weight:600;font-size:13px;color:var(--gray-800)">${e.foro||e.nombre||'—'}</span></div><div style="display:flex;align-items:center;gap:9px"><span style="font-size:22px;font-weight:700;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span><span style="font-size:11px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.possible} pts</span><button class="btn-g" style="color:var(--blue);border-color:#bfdbfe;padding:3px 6px" title="Descargar reporte PowerPoint" onclick="exportEvalPpt('${e.fbId}')"><i class="ti ti-presentation"></i></button>${isAdmin?`<button class="btn-g" style="color:var(--red);border-color:#fca5a5;padding:3px 6px" onclick="delEval('${e.fbId}')"><i class="ti ti-trash"></i></button>`:''}</div></div><div class="hist-meta"><span><i class="ti ti-calendar"></i>${fechaStr}</span><span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span></div><div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">${levBreak}</div><div class="sec-chips">${chips}</div></div>`;
   });
   document.getElementById('history-list').innerHTML=html;
 };
 
 window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
+
+// ── Genera un reporte PowerPoint (.pptx) individual para una evaluación ──
+// Muestra: portada con foro/nivel/fecha/puntaje, resumen por sección,
+// y el detalle de los criterios NO cumplidos agrupados por sección/nivel.
+window.exportEvalPpt=async function(fbId){
+  const e=evals.find(ev=>ev.fbId===fbId);
+  if(!e){toast('Evaluación no encontrada','danger');return;}
+  if(typeof PptxGenJS==='undefined'){toast('No se pudo cargar el generador de PowerPoint','danger');return;}
+  try{
+    toast('Generando PowerPoint…','info');
+    const pptx=new PptxGenJS();
+    pptx.defineLayout({name:'QRQC',width:10,height:5.63});
+    pptx.layout='QRQC';
+
+    const C={dark:'1A2B4A',blue:'1A6EF5',green:'16A34A',amber:'D97706',red:'DC2626',gray:'64748B',
+      BASICO:'C0392B',BRONCE:'B5651D',PLATA:'5D6D7E',ORO:'B8860B'};
+    const pctColor=e.pct>=80?C.green:e.pct>=60?C.blue:e.pct>=40?C.amber:C.red;
+    const fechaStr=e.createdAt&&e.createdAt.toDate?e.createdAt.toDate().toLocaleDateString('es-MX'):(e.fecha||'');
+    const foroNombre=e.foro||e.nombre||'—';
+
+    // ── Slide 1: Portada / resumen general ──
+    let s1=pptx.addSlide();
+    s1.background={color:C.dark};
+    s1.addText('Reporte de Evaluación QRQC',{x:0.5,y:0.45,w:9,h:0.6,fontSize:24,bold:true,color:'FFFFFF',fontFace:'Arial'});
+    s1.addText(foroNombre,{x:0.5,y:1.05,w:9,h:0.55,fontSize:19,color:'60A5FA',bold:true,fontFace:'Arial'});
+    s1.addText(`Nivel de foro: ${e.nivelForo||'—'}    |    Fecha: ${fechaStr}    |    Empleado: ${e.empleado||'—'}`,{x:0.5,y:1.62,w:9,h:0.4,fontSize:12,color:'BFDBFE'});
+
+    s1.addShape('roundRect',{x:0.5,y:2.25,w:2.6,h:1.5,fill:{color:'FFFFFF'},line:{color:'FFFFFF'},rectRadius:0.08});
+    s1.addText(`${e.pct}%`,{x:0.5,y:2.35,w:2.6,h:0.85,fontSize:34,bold:true,color:pctColor,align:'center',fontFace:'Arial'});
+    s1.addText(`${e.total} / ${e.possible} pts totales`,{x:0.5,y:3.2,w:2.6,h:0.4,fontSize:10,color:C.dark,align:'center'});
+
+    let lx=3.35;
+    LEVELS.forEach(lev=>{
+      const lt=(e.levTotals||{})[lev]||0;
+      const tot=(e.sections||[]).filter(s=>s.niveles&&s.niveles.find(x=>x.nivel===lev)).length;
+      if(tot>0){
+        const ok=lt===tot;
+        s1.addShape('roundRect',{x:lx,y:2.25,w:1.45,h:1.5,fill:{color:'FFFFFF'},line:{color:C[lev],pt:1.5},rectRadius:0.08});
+        s1.addText(LEVEL_LABELS[lev],{x:lx,y:2.35,w:1.45,h:0.3,fontSize:11,bold:true,color:C[lev],align:'center'});
+        s1.addText(`${lt}/${tot}`,{x:lx,y:2.68,w:1.45,h:0.6,fontSize:20,bold:true,color:C[lev],align:'center'});
+        s1.addText(ok?'Completo':'Pendiente',{x:lx,y:3.28,w:1.45,h:0.3,fontSize:8,bold:true,color:ok?C.green:C.red,align:'center'});
+        lx+=1.6;
+      }
+    });
+
+    const failCount=(e.sections||[]).reduce((a,sec)=>a+((sec.niveles||[]).reduce((b,niv)=>b+((niv.items||[]).filter(it=>!it.checked).length),0)),0);
+    s1.addText(failCount===0?'Sin criterios pendientes en esta evaluación.':`${failCount} criterio(s) pendiente(s) por cumplir — ver detalle en las siguientes diapositivas.`,
+      {x:0.5,y:4.1,w:9,h:0.5,fontSize:12,color:failCount===0?'86EFAC':'FCA5A5',italic:true});
+
+    // ── Slide 2: Resumen por sección (tabla) ──
+    let s2=pptx.addSlide();
+    s2.addText('Resumen por Sección',{x:0.4,y:0.28,w:9,h:0.5,fontSize:19,bold:true,color:C.dark});
+    s2.addText(foroNombre+'  —  '+fechaStr,{x:0.4,y:0.72,w:9,h:0.35,fontSize:11,color:C.gray});
+    const rows=[[
+      {text:'Sección',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:10}},
+      {text:'Pts',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:10,align:'center'}},
+      {text:'Posibles',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:10,align:'center'}},
+      {text:'Estado',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:10,align:'center'}}
+    ]];
+    (e.sections||[]).forEach(sec=>{
+      const ok=sec.pts===sec.possible;
+      rows.push([
+        {text:sec.nombre,options:{fontSize:9.5}},
+        {text:String(sec.pts),options:{fontSize:9.5,align:'center'}},
+        {text:String(sec.possible),options:{fontSize:9.5,align:'center'}},
+        {text:ok?'Completa':'Pendiente',options:{fontSize:9.5,align:'center',color:ok?C.green:C.red,bold:true}}
+      ]);
+    });
+    s2.addTable(rows,{x:0.4,y:1.15,w:9.2,fontFace:'Arial',border:{type:'solid',color:'E2E8F0',pt:0.5},autoPage:true,autoPageLineWeight:0.5,autoPageCharWeight:0});
+
+    // ── Slides siguientes: criterios NO cumplidos, agrupados por sección ──
+    const levLabels=LEVEL_LABELS;
+    const failuresBySec=[];
+    (e.sections||[]).forEach(sec=>{
+      const fails=[];
+      (sec.niveles||[]).forEach(niv=>{
+        (niv.items||[]).forEach(it=>{if(!it.checked)fails.push({nivel:levLabels[niv.nivel]||niv.nivel,texto:it.texto});});
+      });
+      if(fails.length)failuresBySec.push({nombre:sec.nombre,fails});
+    });
+
+    if(failuresBySec.length===0){
+      let sOk=pptx.addSlide();
+      sOk.addText('✓',{x:0,y:1.4,w:10,h:1,fontSize:48,bold:true,color:C.green,align:'center'});
+      sOk.addText('¡Todos los criterios evaluados fueron cumplidos!',{x:0.5,y:2.6,w:9,h:0.8,fontSize:18,bold:true,color:C.dark,align:'center'});
+    }else{
+      const chunkSize=9;
+      failuresBySec.forEach(secF=>{
+        for(let i=0;i<secF.fails.length;i+=chunkSize){
+          const chunk=secF.fails.slice(i,i+chunkSize);
+          let s=pptx.addSlide();
+          const suffix=secF.fails.length>chunkSize?`  (${Math.floor(i/chunkSize)+1}/${Math.ceil(secF.fails.length/chunkSize)})`:'';
+          s.addText('Criterios pendientes — '+secF.nombre+suffix,{x:0.4,y:0.28,w:9.2,h:0.5,fontSize:15,bold:true,color:C.red});
+          const bodyRows=[[
+            {text:'Nivel',options:{bold:true,fill:{color:'FEE2E2'},color:C.red,fontSize:9.5}},
+            {text:'Criterio no cumplido',options:{bold:true,fill:{color:'FEE2E2'},color:C.red,fontSize:9.5}}
+          ]];
+          chunk.forEach(f=>{bodyRows.push([
+            {text:f.nivel,options:{fontSize:8.5,bold:true,color:C.dark}},
+            {text:f.texto,options:{fontSize:8.5,color:C.dark}}
+          ]);});
+          s.addTable(bodyRows,{x:0.4,y:0.85,w:9.2,colW:[1.3,7.9],fontFace:'Arial',border:{type:'solid',color:'E2E8F0',pt:0.5}});
+        }
+      });
+    }
+
+    const safeName=foroNombre.replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'');
+    pptx.writeFile({fileName:`QRQC_${safeName}_${e.fecha||''}.pptx`});
+    toast('✓ PowerPoint generado','success');
+  }catch(err){
+    console.error(err);
+    toast('Error al generar PPT: '+err.message,'danger');
+  }
+};
 
 window.exportExcel=function(){
   if(!evals.length){toast('No hay evaluaciones para exportar','danger');return;}
