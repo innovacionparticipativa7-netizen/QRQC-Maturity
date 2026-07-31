@@ -212,7 +212,10 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
     <div id="tab-history" class="screen">
       <div class="sec-hdr">
         <h2><i class="ti ti-history"></i> Historial de evaluaciones</h2>
-        <button class="btn-s" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-p" onclick="exportHistoryPpt()"><i class="ti ti-presentation"></i> Exportar PowerPoint</button>
+          <button class="btn-s" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+        </div>
       </div>
       <div class="card" style="padding:13px;margin-bottom:12px">
         <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end">
@@ -691,6 +694,97 @@ window.exportEvalPpt=async function(fbId){
 
     const safeName=foroNombre.replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'');
     pptx.writeFile({fileName:`QRQC_${safeName}_${e.fecha||''}.pptx`});
+    toast('✓ PowerPoint generado','success');
+  }catch(err){
+    console.error(err);
+    toast('Error al generar PPT: '+err.message,'danger');
+  }
+};
+
+// ── Genera un reporte PowerPoint GENERAL con todos los foros del historial ──
+// (respeta los filtros de Nivel / Búsqueda activos en la pantalla de Historial)
+// y muestra el porcentaje de cada foro ordenado de mayor a menor.
+window.exportHistoryPpt=async function(){
+  if(!evals.length){toast('No hay evaluaciones para exportar','danger');return;}
+  const fnivel=document.getElementById('h-nivel').value;
+  const ftextRaw=document.getElementById('h-search').value;
+  const ftext=ftextRaw.toLowerCase();
+  const list=evals.filter(e=>{
+    if(fnivel&&e.nivelForo!==fnivel)return false;
+    if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;
+    return true;
+  });
+  if(!list.length){toast('No hay evaluaciones para exportar con este filtro','danger');return;}
+  if(typeof PptxGenJS==='undefined'){toast('No se pudo cargar el generador de PowerPoint','danger');return;}
+  try{
+    toast('Generando PowerPoint…','info');
+    const pptx=new PptxGenJS();
+    pptx.defineLayout({name:'QRQC',width:10,height:5.63});
+    pptx.layout='QRQC';
+
+    const C={dark:'1A2B4A',blue:'1A6EF5',green:'16A34A',amber:'D97706',red:'DC2626',gray:'64748B',
+      BASICO:'C0392B',BRONCE:'B5651D',PLATA:'5D6D7E',ORO:'B8860B'};
+
+    const sorted=[...list].sort((a,b)=>(b.pct||0)-(a.pct||0));
+    const avgPct=Math.round(list.reduce((a,e)=>a+(e.pct||0),0)/list.length);
+    const summary=computeLevelSummary(list);
+    const todayStr=new Date().toLocaleDateString('es-MX');
+
+    // ── Slide 1: Portada con estadísticas generales ──
+    let s1=pptx.addSlide();
+    s1.background={color:C.dark};
+    s1.addText('Reporte General QRQC',{x:0.5,y:0.5,w:9,h:0.6,fontSize:26,bold:true,color:'FFFFFF',fontFace:'Arial'});
+    s1.addText('Historial de evaluaciones de foros',{x:0.5,y:1.15,w:9,h:0.45,fontSize:15,color:'60A5FA'});
+    let filterTxt='Todos los niveles';
+    if(fnivel)filterTxt='Nivel: '+fnivel;
+    if(ftextRaw)filterTxt+='   |   Búsqueda: "'+ftextRaw+'"';
+    s1.addText(`Generado: ${todayStr}    |    Foros incluidos: ${list.length}    |    ${filterTxt}`,{x:0.5,y:1.65,w:9,h:0.4,fontSize:11,color:'BFDBFE'});
+
+    const avgColor=avgPct>=80?C.green:avgPct>=60?C.blue:avgPct>=40?C.amber:C.red;
+    s1.addShape('roundRect',{x:0.5,y:2.25,w:2.6,h:1.5,fill:{color:'FFFFFF'},line:{color:'FFFFFF'},rectRadius:0.08});
+    s1.addText(`${avgPct}%`,{x:0.5,y:2.35,w:2.6,h:0.85,fontSize:34,bold:true,color:avgColor,align:'center',fontFace:'Arial'});
+    s1.addText('Promedio general',{x:0.5,y:3.2,w:2.6,h:0.4,fontSize:10,color:C.dark,align:'center'});
+
+    let lx=3.35;
+    LEVELS.forEach(lev=>{
+      s1.addShape('roundRect',{x:lx,y:2.25,w:1.45,h:1.5,fill:{color:'FFFFFF'},line:{color:C[lev],pt:1.5},rectRadius:0.08});
+      s1.addText(LEVEL_LABELS[lev],{x:lx,y:2.35,w:1.45,h:0.3,fontSize:11,bold:true,color:C[lev],align:'center'});
+      s1.addText(String(summary[lev]||0),{x:lx,y:2.68,w:1.45,h:0.6,fontSize:22,bold:true,color:C[lev],align:'center'});
+      s1.addText('foros',{x:lx,y:3.28,w:1.45,h:0.3,fontSize:8,color:C.dark,align:'center'});
+      lx+=1.6;
+    });
+    s1.addText('Nivel de madurez alcanzado (según la evaluación más reciente de cada foro)',{x:0.5,y:4.15,w:9,h:0.4,fontSize:10,italic:true,color:'BFDBFE'});
+
+    // ── Slide(s): tabla con TODOS los foros y su porcentaje, de mayor a menor ──
+    let s2=pptx.addSlide();
+    s2.addText('Todos los Foros — Porcentaje de Evaluación',{x:0.4,y:0.28,w:9,h:0.5,fontSize:17,bold:true,color:C.dark});
+    s2.addText('Ordenado de mayor a menor porcentaje',{x:0.4,y:0.7,w:9,h:0.3,fontSize:10,color:C.gray});
+
+    const rows=[[
+      {text:'Foro',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:9.5}},
+      {text:'Nivel',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:9.5,align:'center'}},
+      {text:'Fecha',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:9.5,align:'center'}},
+      {text:'Pts',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:9.5,align:'center'}},
+      {text:'%',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:9.5,align:'center'}},
+      {text:'Estado',options:{bold:true,fill:{color:C.dark},color:'FFFFFF',fontSize:9.5,align:'center'}}
+    ]];
+    sorted.forEach(e=>{
+      const pct=e.pct||0;
+      const color=pct>=80?C.green:pct>=60?C.blue:pct>=40?C.amber:C.red;
+      const estado=pct>=80?'Excelente':pct>=60?'Bueno':pct>=40?'Regular':'Crítico';
+      const fechaStr=e.createdAt&&e.createdAt.toDate?e.createdAt.toDate().toLocaleDateString('es-MX'):(e.fecha||'');
+      rows.push([
+        {text:e.foro||e.nombre||'—',options:{fontSize:8.5}},
+        {text:e.nivelForo||'—',options:{fontSize:8.5,align:'center'}},
+        {text:fechaStr,options:{fontSize:8.5,align:'center'}},
+        {text:`${e.total}/${e.possible}`,options:{fontSize:8.5,align:'center'}},
+        {text:`${pct}%`,options:{fontSize:8.5,align:'center',bold:true,color}},
+        {text:estado,options:{fontSize:8.5,align:'center',bold:true,color}}
+      ]);
+    });
+    s2.addTable(rows,{x:0.4,y:1.1,w:9.2,colW:[3.6,0.8,1.2,1.1,0.9,1.6],fontFace:'Arial',border:{type:'solid',color:'E2E8F0',pt:0.5},autoPage:true,autoPageRepeatHeader:true,autoPageLineWeight:0.5,autoPageCharWeight:0});
+
+    pptx.writeFile({fileName:`QRQC_Reporte_General_${new Date().toISOString().split('T')[0]}.pptx`});
     toast('✓ PowerPoint generado','success');
   }catch(err){
     console.error(err);
