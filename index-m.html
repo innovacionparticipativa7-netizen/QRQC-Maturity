@@ -641,8 +641,7 @@ function getWeekStart(date){
 function formatWeekLabel(d){
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
 }
-function computeWeeklyCounts(list, numWeeks=8){
-  // Genera las últimas N semanas (incluyendo la actual) como buckets
+function computeWeeklyLevelCounts(list, numWeeks=8){
   const now=new Date();
   const weeks=[];
   for(let i=numWeeks-1;i>=0;i--){
@@ -650,17 +649,22 @@ function computeWeeklyCounts(list, numWeeks=8){
     d.setDate(d.getDate()-i*7);
     weeks.push(getWeekStart(d).getTime());
   }
-  const counts=weeks.map(()=>0);
+  // Estructura: { BASICO:[0,0,...], BRONCE:[...], PLATA:[...], ORO:[...] }
+  const data={BASICO:weeks.map(()=>0),BRONCE:weeks.map(()=>0),PLATA:weeks.map(()=>0),ORO:weeks.map(()=>0)};
+
   list.forEach(e=>{
     const t=getEvalTime(e);
     if(!t)return;
     const wk=getWeekStart(new Date(t)).getTime();
     const idx=weeks.indexOf(wk);
-    if(idx>=0)counts[idx]++;
+    if(idx<0)return;
+    const lev=getAchievedLevel(e); // ya definida en tu código
+    if(lev)data[lev][idx]++;
   });
+
   return {
     labels:weeks.map(w=>formatWeekLabel(new Date(w))),
-    counts
+    data
   };
 }
 
@@ -672,29 +676,33 @@ function renderWeeklyChart(list){
   if(!isAdmin){card.style.display='none';return;}
   card.style.display='block';
 
-  const {labels,counts}=computeWeeklyCounts(list,8);
+  const {labels,data}=computeWeeklyLevelCounts(list,8);
   const ctx=document.getElementById('weekly-chart').getContext('2d');
+
+  const COLORS={BASICO:'#c0392b',BRONCE:'#b5651d',PLATA:'#5d6d7e',ORO:'#b8860b'};
+
+  const datasets=LEVELS.map(lev=>({
+    label:LEVEL_LABELS[lev],
+    data:data[lev],
+    backgroundColor:COLORS[lev],
+    borderRadius:4,
+    maxBarThickness:36
+  }));
 
   if(weeklyChartInstance){weeklyChartInstance.destroy();}
   weeklyChartInstance=new Chart(ctx,{
     type:'bar',
-    data:{
-      labels,
-      datasets:[{
-        label:'Foros evaluados',
-        data:counts,
-        backgroundColor:'#1a6ef5',
-        borderRadius:5,
-        maxBarThickness:36
-      }]
-    },
+    data:{labels,datasets},
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
+      plugins:{
+        legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+        tooltip:{mode:'index',intersect:false}
+      },
       scales:{
-        y:{beginAtZero:true,ticks:{stepSize:1,precision:0}},
-        x:{grid:{display:false}}
+        x:{stacked:true,grid:{display:false}},
+        y:{stacked:true,beginAtZero:true,ticks:{stepSize:1,precision:0}}
       }
     }
   });
