@@ -641,6 +641,10 @@ function getWeekStart(date){
 function formatWeekLabel(d){
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
 }
+
+
+
+  
 function computeWeeklyLevelCounts(list, numWeeks=8){
   const now=new Date();
   const weeks=[];
@@ -666,6 +670,28 @@ function computeWeeklyLevelCounts(list, numWeeks=8){
     data
   };
 }
+
+const totalLabelPlugin={
+  id:'totalLabelPlugin',
+  afterDatasetsDraw(chart){
+    const {ctx,data,scales:{x,y}}=chart;
+    ctx.save();
+    ctx.font='600 11px IBM Plex Sans, sans-serif';
+    ctx.fillStyle='#1a2b4a';
+    ctx.textAlign='center';
+    ctx.textBaseline='bottom';
+    data.labels.forEach((_,i)=>{
+      let total=0;
+      data.datasets.forEach(ds=>{total+=ds.data[i]||0;});
+      if(total>0){
+        const xPos=x.getPixelForValue(i);
+        const yPos=y.getPixelForValue(total);
+        ctx.fillText(total,xPos,yPos-4);
+      }
+    });
+    ctx.restore();
+  }
+};
 
 let weeklyChartInstance=null;
 function renderWeeklyChart(list){
@@ -713,6 +739,13 @@ function renderWeeklyChart(list){
     }
   });
 }
+
+
+
+
+
+
+  
 
 
 
