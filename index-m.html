@@ -661,8 +661,8 @@ function computeWeeklyLevelCounts(list, numWeeks=8){
     const wk=getWeekStart(new Date(t)).getTime();
     const idx=weeks.indexOf(wk);
     if(idx<0)return;
-    const lev=getAchievedLevel(e);
-    if(lev)data[lev][idx]++;
+    const lev=getAchievedLevel(e)||'BASICO'; // si no completó ni Básico, se cuenta como Básico
+    data[lev][idx]++;
   });
 
   return {
