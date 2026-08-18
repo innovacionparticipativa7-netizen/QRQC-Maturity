@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:13px}
@@ -267,6 +268,12 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
           <button onclick="loadHistory()" style="align-self:flex-end"><i class="ti ti-refresh"></i> Recargar</button>
         </div>
       </div>
+      <div class="card" id="admin-weekly-chart-card" style="display:none;padding:16px;margin-bottom:14px">
+  <h2 style="font-size:13px;font-weight:600;margin-bottom:10px"><i class="ti ti-chart-bar"></i> Foros evaluados por semana</h2>
+  <div style="position:relative;height:240px">
+    <canvas id="weekly-chart"></canvas>
+  </div>
+</div>
       <div class="level-summary" id="hist-level-summary">
         <div class="lev-box lb-basico"><div class="lv-name">🔴 Básico</div><div class="lv-score" id="hsum-BASICO">0</div><div class="lv-max">foros</div></div>
         <div class="lev-box lb-bronce"><div class="lv-name">🟤 Bronce</div><div class="lv-score" id="hsum-BRONCE">0</div><div class="lv-max">foros</div></div>
@@ -607,6 +614,8 @@ window.renderHistory=function(){
   const ftext=document.getElementById('h-search').value.toLowerCase();
   const list=evals.filter(e=>{if(fnivel&&e.nivelForo!==fnivel)return false;if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;return true;});
   const summary=computeLevelSummary(list);
+renderWeeklyChart(list);
+  
   LEVELS.forEach(lev=>{const el=document.getElementById('hsum-'+lev);if(el)el.textContent=summary[lev];});
   if(!list.length){document.getElementById('history-list').innerHTML='<div class="empty"><i class="ti ti-clipboard-off"></i>No hay evaluaciones registradas.</div>';return;}
   const isAdmin=currentUser&&currentUser.role==='admin';
@@ -621,6 +630,81 @@ window.renderHistory=function(){
   document.getElementById('history-list').innerHTML=html;
 };
 
+// Devuelve el lunes de la semana ISO correspondiente a una fecha
+function getWeekStart(date){
+  const d=new Date(date);
+  const day=(d.getDay()+6)%7; // lunes=0
+  d.setDate(d.getDate()-day);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function formatWeekLabel(d){
+  return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
+}
+function computeWeeklyCounts(list, numWeeks=8){
+  // Genera las últimas N semanas (incluyendo la actual) como buckets
+  const now=new Date();
+  const weeks=[];
+  for(let i=numWeeks-1;i>=0;i--){
+    const d=new Date(now);
+    d.setDate(d.getDate()-i*7);
+    weeks.push(getWeekStart(d).getTime());
+  }
+  const counts=weeks.map(()=>0);
+  list.forEach(e=>{
+    const t=getEvalTime(e);
+    if(!t)return;
+    const wk=getWeekStart(new Date(t)).getTime();
+    const idx=weeks.indexOf(wk);
+    if(idx>=0)counts[idx]++;
+  });
+  return {
+    labels:weeks.map(w=>formatWeekLabel(new Date(w))),
+    counts
+  };
+}
+
+
+let weeklyChartInstance=null;
+function renderWeeklyChart(list){
+  const card=document.getElementById('admin-weekly-chart-card');
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  if(!isAdmin){card.style.display='none';return;}
+  card.style.display='block';
+
+  const {labels,counts}=computeWeeklyCounts(list,8);
+  const ctx=document.getElementById('weekly-chart').getContext('2d');
+
+  if(weeklyChartInstance){weeklyChartInstance.destroy();}
+  weeklyChartInstance=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Foros evaluados',
+        data:counts,
+        backgroundColor:'#1a6ef5',
+        borderRadius:5,
+        maxBarThickness:36
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{beginAtZero:true,ticks:{stepSize:1,precision:0}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+}
+  
+
+
+
+
+  
 window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
 // ── Genera un reporte PowerPoint (.pptx) individual para una evaluación ──
