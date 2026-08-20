@@ -671,6 +671,48 @@ function computeWeeklyLevelCounts(list, numWeeks=8){
   };
 }
 
+function getWeeklyGoal(fnivel){
+  if(fnivel==='N1')return 19;
+  if(fnivel==='N2')return 13;
+  if(fnivel==='N3')return 1;
+  return 30; // Todos
+}
+
+let currentWeeklyGoal=30;
+
+const goalLinePlugin={
+  id:'goalLinePlugin',
+  afterDatasetsDraw(chart){
+    const goal=currentWeeklyGoal;
+    const {ctx,chartArea,scales:{y}}=chart;
+    if(!chartArea||goal==null)return;
+    const yPos=y.getPixelForValue(goal);
+    if(yPos<chartArea.top||yPos>chartArea.bottom)return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.setLineDash([6,4]);
+    ctx.lineWidth=2;
+    ctx.strokeStyle='#dc2626';
+    ctx.moveTo(chartArea.left,yPos);
+    ctx.lineTo(chartArea.right,yPos);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font='600 10px IBM Plex Sans, sans-serif';
+    ctx.fillStyle='#dc2626';
+    ctx.textAlign='right';
+    ctx.textBaseline='bottom';
+    ctx.fillText('Meta: '+goal,chartArea.right,yPos-3);
+    ctx.restore();
+  }
+};
+
+
+
+
+
+
+
+  
 const totalLabelPlugin={
   id:'totalLabelPlugin',
   afterDatasetsDraw(chart){
@@ -693,12 +735,17 @@ const totalLabelPlugin={
   }
 };
 
+
 let weeklyChartInstance=null;
 function renderWeeklyChart(list){
   const card=document.getElementById('admin-weekly-chart-card');
   const isAdmin=currentUser&&currentUser.role==='admin';
   if(!isAdmin){card.style.display='none';return;}
   card.style.display='block';
+
+  const fnivel=document.getElementById('h-nivel').value;
+  const goal=getWeeklyGoal(fnivel);
+  currentWeeklyGoal=goal;
 
   const {labels,data}=computeWeeklyLevelCounts(list,8);
   const ctx=document.getElementById('weekly-chart').getContext('2d');
@@ -713,13 +760,13 @@ function renderWeeklyChart(list){
     maxBarThickness:36
   }));
 
-  const maxTotal=Math.max(...labels.map((_,i)=>LEVELS.reduce((s,lev)=>s+(data[lev][i]||0),0)),1);
+  const maxTotal=Math.max(...labels.map((_,i)=>LEVELS.reduce((s,lev)=>s+(data[lev][i]||0),0)),goal,1);
 
   if(weeklyChartInstance){weeklyChartInstance.destroy();}
   weeklyChartInstance=new Chart(ctx,{
     type:'bar',
     data:{labels,datasets},
-    plugins:[totalLabelPlugin],
+    plugins:[totalLabelPlugin,goalLinePlugin],
     options:{
       responsive:true,
       maintainAspectRatio:false,
