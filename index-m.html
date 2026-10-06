@@ -249,7 +249,14 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
         <div class="lev-box lb-plata"><div class="lv-name">⚪ Plata</div><div class="lv-score" id="sum-PLATA">0</div><div class="lv-max" id="sum-max-PLATA">/ 0 secc.</div></div>
         <div class="lev-box lb-oro"><div class="lv-name">🟡 Oro</div><div class="lv-score" id="sum-ORO">0</div><div class="lv-max" id="sum-max-ORO">/ 0 secc.</div></div>
       </div>
-
+      <div class="card" style="padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:600;color:var(--gray-500);margin-right:4px"><i class="ti ti-checks"></i> Llenar rápido:</span>
+        <button style="border-color:var(--basico);color:var(--basico);background:#fdecea" onclick="fillLevel('BASICO')"><i class="ti ti-circle-check"></i> Básico</button>
+        <button style="border-color:var(--bronce);color:var(--bronce);background:#fdf3e3" onclick="fillLevel('BRONCE')"><i class="ti ti-circle-check"></i> Bronce</button>
+        <button style="border-color:var(--plata);color:var(--plata);background:#eef1f4" onclick="fillLevel('PLATA')"><i class="ti ti-circle-check"></i> Plata</button>
+        <button style="border-color:var(--oro);color:var(--oro);background:#fdf6e3" onclick="fillLevel('ORO')"><i class="ti ti-circle-check"></i> Oro</button>
+        <button class="btn-p" onclick="fillLevel('ORO')"><i class="ti ti-checks"></i> Llenar todo</button>
+      </div>
       <div class="card" style="padding:16px;margin-bottom:14px">
         <h2 style="font-size:13px;font-weight:600;margin-bottom:10px"><i class="ti ti-table"></i> Matriz de evaluación</h2>
         <div class="alert a-info" style="font-size:11px"><i class="ti ti-info-circle"></i> Marca los criterios cumplidos. Cuando <strong>todos</strong> los criterios de un nivel en una sección están marcados, esa sección suma <strong>1 punto</strong> en ese nivel.</div>
@@ -577,6 +584,27 @@ function buildMatrix(){
 }
 
 window.onCheck=function(secId){updateGating(secId);recalcSection(secId);recalcGrand();};
+
+  // Llena de un solo clic todos los criterios del nivel elegido en TODAS las secciones.
+// Por la regla de niveles, también llena los niveles anteriores
+// (ej. Plata llena Básico + Bronce + Plata).
+window.fillLevel=function(targetLev){
+  const maxIdx=LEVELS.indexOf(targetLev);
+  if(maxIdx<0)return;
+  criteria.forEach(sec=>{
+    LEVELS.forEach((lev,li)=>{
+      if(li>maxIdx)return;
+      const crit=sec[lev]||[];
+      crit.forEach((_,ci)=>{
+        const cb=document.getElementById(`chk_${sec.id}_${lev}_${ci}`);
+        if(cb){cb.disabled=false;cb.checked=true;}
+      });
+    });
+  });
+  recalcAll();
+  const msg=targetLev==='BASICO'?'Nivel Básico llenado':`Llenado hasta ${LEVEL_LABELS[targetLev]}`;
+  toast(msg,'success');
+};
 
 // Gating: dentro de una misma sección, un nivel solo se puede marcar
 // si TODOS los criterios del nivel anterior de esa sección ya están marcados.
