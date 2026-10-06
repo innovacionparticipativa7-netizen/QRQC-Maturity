@@ -137,6 +137,15 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
 .flex-end{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--gray-400)}
 .empty i{font-size:36px;display:block;margin-bottom:8px}
+/* ── LÍDERES Y SUPERVISORES ── */
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.cat-tab{padding:7px 14px;font-weight:600;font-size:12px;border:1.5px solid var(--gray-300);background:var(--white);color:var(--gray-500)}
+.cat-tab.active{background:var(--blue);color:#fff;border-color:var(--blue-d)}
+.cat-tab.active.cat-lideres{background:#7c3aed;border-color:#5b21b6}
+#eval-cat-banner{display:none;padding:8px 12px;border-radius:var(--radius-sm);background:#f3e8ff;border:1px solid #d8b4fe;color:#5b21b6;font-size:12px;font-weight:600;margin-bottom:12px;align-items:center;gap:7px}
+#eval-cat-banner.show{display:flex}
+.b-lideres{background:#f3e8ff;color:#6d28d9}
+.b-foros{background:var(--blue-l);color:var(--blue-d)}
 </style>
 </head>
 <body>
@@ -202,6 +211,7 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
   </header>
   <nav id="app-nav">
     <button class="nav-btn active" id="tab-btn-eval" onclick="showTab('eval')"><i class="ti ti-star"></i> Evaluar</button>
+    <button class="nav-btn" id="tab-btn-lideres" onclick="showTab('lideres')"><i class="ti ti-users-group"></i> Líderes y Supervisores</button>
     <button class="nav-btn" id="tab-btn-history" onclick="showTab('history')"><i class="ti ti-history"></i> Historial</button>
     <button class="nav-btn" id="tab-btn-admin" style="display:none" onclick="showTab('admin')"><i class="ti ti-settings"></i> Admin</button>
   </nav>
@@ -210,7 +220,8 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
 
     <div id="tab-eval" class="screen active">
       <div class="card" style="padding:16px;margin-bottom:14px">
-        <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-building"></i> Seleccionar foro</h2>
+        <div id="eval-cat-banner"><i class="ti ti-users-group"></i> Evaluación de Líderes y Supervisores</div>
+        <h2 id="eval-title" style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-building"></i> Seleccionar foro</h2>
         <label style="margin-bottom:6px">Filtrar por nivel</label>
         <div class="nivel-tabs" id="nivel-tabs">
           <button class="nivel-tab nt-n1" onclick="filterNivel('N1')">N1</button>
@@ -225,6 +236,10 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
           <i class="ti ti-check"></i>
           <span>Foro seleccionado: <strong id="foro-badge-txt"></strong></span>
           <span style="margin-left:auto;font-size:10px;color:var(--gray-400)" id="foro-badge-nivel"></span>
+        </div>
+        <div id="lider-wrap" style="display:none;margin-top:10px">
+          <label for="f-lider">Nombre del líder / supervisor</label>
+          <input type="text" id="f-lider" placeholder="Ej: Juan Pérez"/>
         </div>
       </div>
 
@@ -248,11 +263,15 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
 
     <div id="tab-history" class="screen">
       <div class="sec-hdr">
-        <h2><i class="ti ti-history"></i> Historial de evaluaciones</h2>
+        <h2 id="hist-title"><i class="ti ti-history"></i> Historial de evaluaciones</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-p" onclick="exportHistoryPpt()"><i class="ti ti-presentation"></i> Exportar PowerPoint</button>
           <button class="btn-s" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         </div>
+      </div>
+      <div class="cat-tabs">
+        <button class="cat-tab cat-foros active" id="hcat-foros" onclick="setHistCategoria('foros')"><i class="ti ti-building"></i> Foros</button>
+        <button class="cat-tab cat-lideres" id="hcat-lideres" onclick="setHistCategoria('lideres')"><i class="ti ti-users-group"></i> Líderes y Supervisores</button>
       </div>
       <div class="card" style="padding:13px;margin-bottom:12px">
         <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end">
@@ -444,6 +463,23 @@ const db=getFirestore(app);
 
 let employees={},criteria=[],evals=[],currentUser=null,editCrit=null;
 let selectedNivel='N1';
+let evalCategoria='foros';   // 'foros' o 'lideres' (lo que se está evaluando)
+let histCategoria='foros';   // 'foros' o 'lideres' (lo que se ve en historial)
+const CAT_LABELS={foros:'Foros',lideres:'Líderes y Supervisores'};
+function catOf(e){return e.categoria==='lideres'?'lideres':'foros';}
+function setEvalCategoriaUI(){
+  const esLider=evalCategoria==='lideres';
+  document.getElementById('eval-cat-banner').classList.toggle('show',esLider);
+  document.getElementById('lider-wrap').style.display=esLider?'block':'none';
+  document.getElementById('eval-title').innerHTML=esLider?'<i class="ti ti-users-group"></i> Seleccionar foro del líder / supervisor':'<i class="ti ti-building"></i> Seleccionar foro';
+}
+window.setHistCategoria=function(cat){
+  histCategoria=cat;
+  document.getElementById('hcat-foros').classList.toggle('active',cat==='foros');
+  document.getElementById('hcat-lideres').classList.toggle('active',cat==='lideres');
+  document.getElementById('hist-title').innerHTML='<i class="ti ti-history"></i> Historial — '+CAT_LABELS[cat];
+  if(evals.length)renderHistory();
+};
 
 function toast(msg,type='info'){const el=document.getElementById('toast');const c={info:'#1a6ef5',success:'#16a34a',danger:'#dc2626',warning:'#d97706'};el.style.background=c[type]||c.info;el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
 window.toast=toast;
@@ -479,7 +515,18 @@ window.doLogin=async function(){
 
 window.doLogout=function(){currentUser=null;document.getElementById('app-wrap').style.display='none';document.getElementById('login-wrap').style.display='flex';document.getElementById('emp-in').value='';document.getElementById('btn-adm-hdr').style.display='none';document.getElementById('tab-btn-admin').style.display='none';};
 
-window.showTab=function(name){['eval','history','admin'].forEach(t=>{document.getElementById('tab-'+t).classList.toggle('active',t===name);const b=document.getElementById('tab-btn-'+t);if(b)b.classList.toggle('active',t===name);});if(name==='history')loadHistory();if(name==='admin'){renderAdminCrit();renderEmpList();}};
+window.showTab=function(name){
+  const screen=name==='lideres'?'eval':name;
+  ['eval','history','admin'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===screen));
+  ['eval','lideres','history','admin'].forEach(t=>{const b=document.getElementById('tab-btn-'+t);if(b)b.classList.toggle('active',t===name);});
+  if(name==='eval'||name==='lideres'){
+    const nueva=name==='lideres'?'lideres':'foros';
+    if(nueva!==evalCategoria){evalCategoria=nueva;resetEval();}
+    setEvalCategoriaUI();
+  }
+  if(name==='history'){setHistCategoria(evalCategoria);loadHistory();}
+  if(name==='admin'){renderAdminCrit();renderEmpList();}
+};
 
 window.filterNivel=function(n){
   selectedNivel=n;
@@ -559,6 +606,7 @@ function recalcGrand(){let total=0,possible=0;const levTotals={BASICO:0,BRONCE:0
 
 window.resetEval=function(){
   document.getElementById('f-foro').value='';
+  document.getElementById('f-lider').value='';
   document.getElementById('foro-badge').classList.remove('show');
   filterNivel('N1');
   buildMatrix();
@@ -571,7 +619,9 @@ window.saveEval=async function(){
   const secResults=[];let grandTotal=0,grandPossible=0;const levTotals={BASICO:0,BRONCE:0,PLATA:0,ORO:0};
   criteria.forEach(sec=>{const levData=[];LEVELS.forEach(lev=>{const crit=sec[lev]||[];if(!crit.length)return;const items=crit.map((cr,ci)=>{const el=document.getElementById(`chk_${sec.id}_${lev}_${ci}`);return{texto:cr,checked:el?el.checked:false};});const complete=items.every(i=>i.checked);if(complete){grandTotal++;levTotals[lev]++;}grandPossible++;levData.push({nivel:lev,items,complete});});secResults.push({id:sec.id,nombre:sec.nombre,niveles:levData,pts:levData.filter(l=>l.complete).length,possible:levData.length});});
   const pct=grandPossible>0?Math.round(grandTotal/grandPossible*100):0;
-  const record={foro,nivelForo:selectedNivel,fecha:fechaISO,total:grandTotal,possible:grandPossible,pct,levTotals,sections:secResults,empleado:currentUser.id};
+  const lider=document.getElementById('f-lider').value.trim();
+  if(evalCategoria==='lideres'&&!lider){toast('Escribe el nombre del líder / supervisor','danger');return;}
+  const record={foro,nivelForo:selectedNivel,fecha:fechaISO,total:grandTotal,possible:grandPossible,pct,levTotals,sections:secResults,empleado:currentUser.id,categoria:evalCategoria,lider:evalCategoria==='lideres'?lider:''};
   try{
     showLoader('Guardando en Firebase…');
     await fbSaveEval(record);
@@ -619,7 +669,7 @@ function computeLevelSummary(list){
 window.renderHistory=function(){
   const fnivel=document.getElementById('h-nivel').value;
   const ftext=document.getElementById('h-search').value.toLowerCase();
-  const list=evals.filter(e=>{if(fnivel&&e.nivelForo!==fnivel)return false;if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;return true;});
+  const list=evals.filter(e=>{if(catOf(e)!==histCategoria)return false;if(fnivel&&e.nivelForo!==fnivel)return false;if(ftext&&!((e.foro||'').toLowerCase().includes(ftext))&&!((e.lider||'').toLowerCase().includes(ftext)))return false;return true;});
   const summary=computeLevelSummary(list);
 renderWeeklyChart(list);
 renderMonthlyChart(list);
@@ -633,7 +683,7 @@ renderMonthlyChart(list);
     const chips=(e.sections||[]).map(sec=>`<span class="sec-chip ${sec.pts===sec.possible?'chip-ok':'chip-no'}" title="${sec.nombre}">${sec.pts}/${sec.possible}</span>`).join('');
     const levBreak=LEVELS.map(lev=>{const lt=e.levTotals||{};const done=lt[lev]||0;const tot=(e.sections||[]).filter(s=>s.niveles&&s.niveles.find(x=>x.nivel===lev)).length;return tot?`<span class="badge b-${LEVEL_CSS[lev]}">${LEVEL_LABELS[lev]}: ${done}/${tot}</span>`:''}).join(' ');
     const fechaStr=e.createdAt?.toDate?e.createdAt.toDate().toLocaleDateString('es-MX'):(e.fecha||'');
-    html+=`<div class="hist-card"><div class="hist-row"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge b-${e.nivelForo||'N1'}">${e.nivelForo||'—'}</span><span style="font-weight:600;font-size:13px;color:var(--gray-800)">${e.foro||e.nombre||'—'}</span></div><div style="display:flex;align-items:center;gap:9px"><span style="font-size:22px;font-weight:700;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span><span style="font-size:11px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.possible} pts</span><button class="btn-g" style="color:var(--blue);border-color:#bfdbfe;padding:3px 6px" title="Descargar reporte PowerPoint" onclick="exportEvalPpt('${e.fbId}')"><i class="ti ti-presentation"></i></button>${isAdmin?`<button class="btn-g" style="color:var(--red);border-color:#fca5a5;padding:3px 6px" onclick="delEval('${e.fbId}')"><i class="ti ti-trash"></i></button>`:''}</div></div><div class="hist-meta"><span><i class="ti ti-calendar"></i>${fechaStr}</span><span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span></div><div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">${levBreak}</div><div class="sec-chips">${chips}</div></div>`;
+    html+=`<div class="hist-card"><div class="hist-row"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge b-${e.nivelForo||'N1'}">${e.nivelForo||'—'}</span><span style="font-weight:600;font-size:13px;color:var(--gray-800)">${e.foro||e.nombre||'—'}</span>${e.lider?`<span class="badge b-lideres"><i class="ti ti-user"></i> ${e.lider}</span>`:''}</div><div style="display:flex;align-items:center;gap:9px"><span style="font-size:22px;font-weight:700;color:${pctColor};font-family:'IBM Plex Mono',monospace">${e.pct}%</span><span style="font-size:11px;color:var(--gray-400);font-family:'IBM Plex Mono',monospace">${e.total}/${e.possible} pts</span><button class="btn-g" style="color:var(--blue);border-color:#bfdbfe;padding:3px 6px" title="Descargar reporte PowerPoint" onclick="exportEvalPpt('${e.fbId}')"><i class="ti ti-presentation"></i></button>${isAdmin?`<button class="btn-g" style="color:var(--red);border-color:#fca5a5;padding:3px 6px" onclick="delEval('${e.fbId}')"><i class="ti ti-trash"></i></button>`:''}</div></div><div class="hist-meta"><span><i class="ti ti-calendar"></i>${fechaStr}</span><span><i class="ti ti-id-badge"></i>Emp: ${e.empleado}</span></div><div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">${levBreak}</div><div class="sec-chips">${chips}</div></div>`;
   });
   document.getElementById('history-list').innerHTML=html;
 };
@@ -650,9 +700,6 @@ function formatWeekLabel(d){
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
 }
 
-
-
-  
 function computeWeeklyLevelCounts(list, numWeeks=8){
   const now=new Date();
   const weeks=[];
@@ -714,13 +761,6 @@ const goalLinePlugin={
   }
 };
 
-
-
-
-
-
-
-  
 const totalLabelPlugin={
   id:'totalLabelPlugin',
   afterDatasetsDraw(chart){
@@ -742,7 +782,6 @@ const totalLabelPlugin={
     ctx.restore();
   }
 };
-
 
 let weeklyChartInstance=null;
 function renderWeeklyChart(list){
@@ -794,7 +833,6 @@ function renderWeeklyChart(list){
     }
   });
 }
-
 
 function getMonthStart(date){
   const d=new Date(date);
@@ -875,16 +913,6 @@ function renderMonthlyChart(list){
   });
 }
 
-  
-
-
-
-  
-
-
-
-
-  
 window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
 // ── Genera un reporte PowerPoint (.pptx) individual para una evaluación ──
@@ -911,7 +939,7 @@ window.exportEvalPpt=async function(fbId){
     s1.background={color:C.dark};
     s1.addText('Reporte de Evaluación QRQC',{x:0.5,y:0.45,w:9,h:0.6,fontSize:24,bold:true,color:'FFFFFF',fontFace:'Arial'});
     s1.addText(foroNombre,{x:0.5,y:1.05,w:9,h:0.55,fontSize:19,color:'60A5FA',bold:true,fontFace:'Arial'});
-    s1.addText(`Nivel de foro: ${e.nivelForo||'—'}    |    Fecha: ${fechaStr}    |    Empleado: ${e.empleado||'—'}`,{x:0.5,y:1.62,w:9,h:0.4,fontSize:12,color:'BFDBFE'});
+    s1.addText(`Nivel de foro: ${e.nivelForo||'—'}    |    Fecha: ${fechaStr}    |    Empleado: ${e.empleado||'—'}${e.lider?'    |    Líder: '+e.lider:''}`,{x:0.5,y:1.62,w:9,h:0.4,fontSize:12,color:'BFDBFE'});
 
     s1.addShape('roundRect',{x:0.5,y:2.25,w:2.6,h:1.5,fill:{color:'FFFFFF'},line:{color:'FFFFFF'},rectRadius:0.08});
     s1.addText(`${e.pct}%`,{x:0.5,y:2.35,w:2.6,h:0.85,fontSize:34,bold:true,color:pctColor,align:'center',fontFace:'Arial'});
@@ -1010,6 +1038,7 @@ window.exportHistoryPpt=async function(){
   const ftextRaw=document.getElementById('h-search').value;
   const ftext=ftextRaw.toLowerCase();
   const list=evals.filter(e=>{
+    if(catOf(e)!==histCategoria)return false;
     if(fnivel&&e.nivelForo!==fnivel)return false;
     if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;
     return true;
@@ -1033,7 +1062,7 @@ window.exportHistoryPpt=async function(){
     // ── Slide 1: Portada con estadísticas generales ──
     let s1=pptx.addSlide();
     s1.background={color:C.dark};
-    s1.addText('Reporte General QRQC',{x:0.5,y:0.5,w:9,h:0.6,fontSize:26,bold:true,color:'FFFFFF',fontFace:'Arial'});
+    s1.addText('Reporte General QRQC — '+CAT_LABELS[histCategoria],{x:0.5,y:0.5,w:9,h:0.6,fontSize:26,bold:true,color:'FFFFFF',fontFace:'Arial'});
     s1.addText('Historial de evaluaciones de foros',{x:0.5,y:1.15,w:9,h:0.45,fontSize:15,color:'60A5FA'});
     let filterTxt='Todos los niveles';
     if(fnivel)filterTxt='Nivel: '+fnivel;
@@ -1084,7 +1113,7 @@ window.exportHistoryPpt=async function(){
     });
     s2.addTable(rows,{x:0.4,y:1.1,w:9.2,colW:[3.6,0.8,1.2,1.1,0.9,1.6],fontFace:'Arial',border:{type:'solid',color:'E2E8F0',pt:0.5},autoPage:true,autoPageRepeatHeader:true,autoPageLineWeight:0.5,autoPageCharWeight:0});
 
-    pptx.writeFile({fileName:`QRQC_Reporte_General_${new Date().toISOString().split('T')[0]}.pptx`});
+    pptx.writeFile({fileName:`QRQC_Reporte_General_${histCategoria==='lideres'?'Lideres_':''}${new Date().toISOString().split('T')[0]}.pptx`});
     toast('✓ PowerPoint generado','success');
   }catch(err){
     console.error(err);
@@ -1098,6 +1127,7 @@ window.exportExcel=function(){
   const fnivel=document.getElementById('h-nivel').value;
   const ftext=document.getElementById('h-search').value.toLowerCase();
   const list=evals.filter(e=>{
+    if(catOf(e)!==histCategoria)return false;
     if(fnivel&&e.nivelForo!==fnivel)return false;
     if(ftext&&!((e.foro||'').toLowerCase().includes(ftext)))return false;
     return true;
@@ -1148,7 +1178,7 @@ window.exportExcel=function(){
   const ws4=XLSX.utils.aoa_to_sheet(det);
   ws4['!cols']=[{wch:24},{wch:12},{wch:10},{wch:32},{wch:36},{wch:10},{wch:80},{wch:10},{wch:16},{wch:12}];
   XLSX.utils.book_append_sheet(wb,ws4,'Detalle');
-  XLSX.writeFile(wb,'QRQC_Evaluaciones_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  XLSX.writeFile(wb,'QRQC_'+(histCategoria==='lideres'?'Lideres_':'')+'Evaluaciones_'+new Date().toISOString().split('T')[0]+'.xlsx');
   toast('Excel generado — 4 hojas','success');
 };
 
