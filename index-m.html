@@ -334,6 +334,29 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
         <div id="adm-crit-list"></div>
         <div class="flex-end"><button class="btn-s" onclick="admSaveCrit()"><i class="ti ti-device-floppy"></i> Guardar en Firebase</button></div>
       </div>
+
+      <div class="card" style="padding:16px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:12px">
+          <h2 style="font-size:13px;font-weight:600"><i class="ti ti-building"></i> Foros por nivel QRQC</h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="margin:0">Ver nivel:</label>
+            <select id="adm-foro-nivel" style="width:auto" onchange="renderAdminForos()">
+              <option value="">Todos</option>
+              <option value="N1">N1</option>
+              <option value="N2">N2</option>
+              <option value="N3">N3</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end">
+          <div style="flex:1;min-width:160px"><label>Nombre del nuevo foro</label><input type="text" id="new-foro" placeholder="Ej: A220 Galleys G3 APT" onkeydown="if(event.key==='Enter')admAddForo()"/></div>
+          <div style="flex:0 0 90px"><label>Nivel</label><select id="new-foro-nivel"><option value="N1">N1</option><option value="N2">N2</option><option value="N3">N3</option></select></div>
+          <button class="btn-p" onclick="admAddForo()"><i class="ti ti-plus"></i> Agregar foro</button>
+        </div>
+        <div class="alert a-info" style="font-size:11px;margin-bottom:8px"><i class="ti ti-info-circle"></i> Para cambiar el nombre, edita el texto y da clic fuera del campo. El cambio se guarda automáticamente.</div>
+        <div id="adm-foro-list" style="max-height:360px;overflow-y:auto"></div>
+      </div>
+
       <div class="card" style="padding:16px">
         <h2 style="font-size:13px;font-weight:600;margin-bottom:12px"><i class="ti ti-users"></i> Empleados</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end">
@@ -350,7 +373,7 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
 <div id="toast"></div>
 
 <script>
-const FOROS=[
+const FOROS_DEFAULT=[
   {nivel:"N1",nombre:"Spares Apt"},
   {nivel:"N1",nombre:"A220 Galleys G1 +APT"},
   {nivel:"N1",nombre:"A220 Galleys G2 &G4 +APT"},
@@ -468,7 +491,7 @@ const firebaseConfig={apiKey:"AIzaSyAxgVTBhEcgv38cFX4vLJfDKiMaZXYNKIA",authDomai
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
-let employees={},criteria=[],evals=[],currentUser=null,editCrit=null;
+let employees={},criteria=[],evals=[],currentUser=null,editCrit=null,foros=[];
 let selectedNivel='N1';
 let evalCategoria='foros';   // 'foros' o 'lideres' (lo que se está evaluando)
 let histCategoria='foros';   // 'foros' o 'lideres' (lo que se ve en historial)
@@ -500,10 +523,12 @@ async function fbSaveCriteria(crit){await setDoc(doc(db,'config','criteria'),{da
 async function fbSaveEval(record){const colRef=collection(db,'evaluations');const docRef=await addDoc(colRef,{...record,createdAt:serverTimestamp()});return docRef.id;}
 async function fbGetEvals(){const q=query(collection(db,'evaluations'),orderBy('createdAt','desc'));const snap=await getDocs(q);return snap.docs.map(d=>({fbId:d.id,...d.data()}));}
 async function fbDeleteEval(fbId){await deleteDoc(doc(db,'evaluations',fbId));}
+async function fbGetForos(){const snap=await getDoc(doc(db,'config','foros'));if(snap.exists())return snap.data().data||[];await setDoc(doc(db,'config','foros'),{data:FOROS_DEFAULT});return JSON.parse(JSON.stringify(FOROS_DEFAULT));}
+async function fbSaveForos(list){await setDoc(doc(db,'config','foros'),{data:list});}
 
 async function initApp(){
   showLoader('Conectando con Firebase…');
-  try{[employees,criteria]=await Promise.all([fbGetEmployees(),fbGetCriteria()]);hideLoader();document.getElementById('login-wrap').style.display='flex';}
+  try{[employees,criteria,foros]=await Promise.all([fbGetEmployees(),fbGetCriteria(),fbGetForos()]);hideLoader();document.getElementById('login-wrap').style.display='flex';}
   catch(e){console.error(e);document.getElementById('fb-loader').querySelector('p').textContent='Error al conectar. Verifica tu conexión.';}
 }
 initApp();
@@ -532,7 +557,7 @@ window.showTab=function(name){
     setEvalCategoriaUI();
   }
   if(name==='history'){setHistCategoria(evalCategoria);loadHistory();}
-  if(name==='admin'){renderAdminCrit();renderEmpList();}
+  if(name==='admin'){renderAdminCrit();renderEmpList();renderAdminForos();}
 };
 
 window.filterNivel=function(n){
@@ -542,7 +567,7 @@ window.filterNivel=function(n){
   });
   const sel=document.getElementById('f-foro');
   sel.innerHTML='<option value="">— Selecciona un foro —</option>';
-  FOROS.filter(f=>f.nivel===n).forEach(f=>{const opt=document.createElement('option');opt.value=f.nombre;opt.textContent=f.nombre;sel.appendChild(opt);});
+  foros.filter(f=>f.nivel===n).forEach(f=>{const opt=document.createElement('option');opt.value=f.nombre;opt.textContent=f.nombre;sel.appendChild(opt);});
   document.getElementById('foro-badge').classList.remove('show');
 };
 
@@ -564,7 +589,6 @@ function buildMatrix(){
     LEVELS.forEach(lev=>{
       const crit=sec[lev]||[];if(!crit.length)return;
       crit.forEach((cr,ci)=>{
-        // Añade clase sec-first-row a la primera <tr> de cada sección (excepto la primera)
         const isSecSep=firstRow&&ci===0&&secIdx>0;
         const isLevSep=ci===0&&!firstRow;
         const trClass=isSecSep?'class="sec-first-row"':isLevSep?'class="lev-first-row"':'';
@@ -585,9 +609,6 @@ function buildMatrix(){
 
 window.onCheck=function(secId){updateGating(secId);recalcSection(secId);recalcGrand();};
 
-  // Llena de un solo clic todos los criterios del nivel elegido en TODAS las secciones.
-// Por la regla de niveles, también llena los niveles anteriores
-// (ej. Plata llena Básico + Bronce + Plata).
 window.fillLevel=function(targetLev){
   const maxIdx=LEVELS.indexOf(targetLev);
   if(maxIdx<0)return;
@@ -606,17 +627,13 @@ window.fillLevel=function(targetLev){
   toast(msg,'success');
 };
 
-// Gating: dentro de una misma sección, un nivel solo se puede marcar
-// si TODOS los criterios del nivel anterior de esa sección ya están marcados.
-// Si se desmarca un criterio de un nivel inferior, se desmarcan y bloquean
-// en cascada los niveles superiores de esa misma sección.
 function updateGating(secId){
   const sec=criteria.find(s=>String(s.id)===String(secId));
   if(!sec)return;
   let prevComplete=true;
   LEVELS.forEach(lev=>{
     const crit=sec[lev]||[];
-    if(!crit.length)return; // este nivel no aplica a la sección, no afecta la cadena
+    if(!crit.length)return;
     const boxes=crit.map((_,ci)=>document.getElementById(`chk_${sec.id}_${lev}_${ci}`)).filter(Boolean);
     if(!prevComplete){
       boxes.forEach(cb=>{if(cb.checked)cb.checked=false;cb.disabled=true;cb.title='Completa primero el nivel anterior de esta sección';});
@@ -655,7 +672,6 @@ window.saveEval=async function(){
     await fbSaveEval(record);
     hideLoader();
     toast('✓ Guardado — '+grandTotal+'/'+grandPossible+' pts ('+pct+'%)','success');
-    // ── Limpiar selección y checkboxes después de guardar ──
     resetEval();
   }
   catch(e){hideLoader();toast('Error: '+e.message,'danger');}
@@ -663,9 +679,6 @@ window.saveEval=async function(){
 
 window.loadHistory=async function(){showLoader('Cargando historial…');try{evals=await fbGetEvals();hideLoader();renderHistory();}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
-// ── Determina el nivel de madurez más alto alcanzado por una evaluación ──
-// (BASICO/BRONCE/PLATA/ORO) sin traslape: cada foro cuenta una sola vez,
-// en el nivel más alto que tenga completo.
 function getEvalTime(e){
   if(e.createdAt&&typeof e.createdAt.toDate==='function')return e.createdAt.toDate().getTime();
   if(e.fecha)return new Date(e.fecha).getTime();
@@ -682,7 +695,6 @@ function getAchievedLevel(e){
   return achieved;
 }
 function computeLevelSummary(list){
-  // Toma la evaluación más reciente de cada foro dentro del listado filtrado
   const latestByForo={};
   list.forEach(e=>{
     const key=e.foro||e.nombre||'—';
@@ -716,10 +728,9 @@ renderMonthlyChart(list);
   document.getElementById('history-list').innerHTML=html;
 };
 
-// Devuelve el lunes de la semana ISO correspondiente a una fecha
 function getWeekStart(date){
   const d=new Date(date);
-  const day=(d.getDay()+6)%7; // lunes=0
+  const day=(d.getDay()+6)%7;
   d.setDate(d.getDate()-day);
   d.setHours(0,0,0,0);
   return d;
@@ -744,7 +755,7 @@ function computeWeeklyLevelCounts(list, numWeeks=8){
     const wk=getWeekStart(new Date(t)).getTime();
     const idx=weeks.indexOf(wk);
     if(idx<0)return;
-    const lev=getAchievedLevel(e)||'BASICO'; // si no completó ni Básico, se cuenta como Básico
+    const lev=getAchievedLevel(e)||'BASICO';
     data[lev][idx]++;
   });
 
@@ -758,7 +769,7 @@ function getWeeklyGoal(fnivel){
   if(fnivel==='N1')return 19;
   if(fnivel==='N2')return 13;
   if(fnivel==='N3')return 1;
-  return 33; // Todos
+  return 33;
 }
 
 let currentWeeklyGoal=30;
@@ -943,9 +954,6 @@ function renderMonthlyChart(list){
 
 window.delEval=async function(fbId){if(!confirm('¿Eliminar esta evaluación?'))return;try{showLoader('Eliminando…');await fbDeleteEval(fbId);evals=evals.filter(e=>e.fbId!==fbId);hideLoader();renderHistory();toast('Eliminada','warning');}catch(e){hideLoader();toast('Error: '+e.message,'danger');}};
 
-// ── Genera un reporte PowerPoint (.pptx) individual para una evaluación ──
-// Muestra: portada con foro/nivel/fecha/puntaje, resumen por sección,
-// y el detalle de los criterios NO cumplidos agrupados por sección/nivel.
 window.exportEvalPpt=async function(fbId){
   const e=evals.find(ev=>ev.fbId===fbId);
   if(!e){toast('Evaluación no encontrada','danger');return;}
@@ -962,7 +970,6 @@ window.exportEvalPpt=async function(fbId){
     const fechaStr=e.createdAt&&e.createdAt.toDate?e.createdAt.toDate().toLocaleDateString('es-MX'):(e.fecha||'');
     const foroNombre=e.foro||e.nombre||'—';
 
-    // ── Slide 1: Portada / resumen general ──
     let s1=pptx.addSlide();
     s1.background={color:C.dark};
     s1.addText('Reporte de Evaluación QRQC',{x:0.5,y:0.45,w:9,h:0.6,fontSize:24,bold:true,color:'FFFFFF',fontFace:'Arial'});
@@ -991,7 +998,6 @@ window.exportEvalPpt=async function(fbId){
     s1.addText(failCount===0?'Sin criterios pendientes en esta evaluación.':`${failCount} criterio(s) pendiente(s) por cumplir — ver detalle en las siguientes diapositivas.`,
       {x:0.5,y:4.1,w:9,h:0.5,fontSize:12,color:failCount===0?'86EFAC':'FCA5A5',italic:true});
 
-    // ── Slide 2: Resumen por sección (tabla) ──
     let s2=pptx.addSlide();
     s2.addText('Resumen por Sección',{x:0.4,y:0.28,w:9,h:0.5,fontSize:19,bold:true,color:C.dark});
     s2.addText(foroNombre+'  —  '+fechaStr,{x:0.4,y:0.72,w:9,h:0.35,fontSize:11,color:C.gray});
@@ -1012,7 +1018,6 @@ window.exportEvalPpt=async function(fbId){
     });
     s2.addTable(rows,{x:0.4,y:1.15,w:9.2,fontFace:'Arial',border:{type:'solid',color:'E2E8F0',pt:0.5},autoPage:true,autoPageLineWeight:0.5,autoPageCharWeight:0});
 
-    // ── Slides siguientes: criterios NO cumplidos, agrupados por sección ──
     const levLabels=LEVEL_LABELS;
     const failuresBySec=[];
     (e.sections||[]).forEach(sec=>{
@@ -1057,9 +1062,6 @@ window.exportEvalPpt=async function(fbId){
   }
 };
 
-// ── Genera un reporte PowerPoint GENERAL con todos los foros del historial ──
-// (respeta los filtros de Nivel / Búsqueda activos en la pantalla de Historial)
-// y muestra el porcentaje de cada foro ordenado de mayor a menor.
 window.exportHistoryPpt=async function(){
   if(!evals.length){toast('No hay evaluaciones para exportar','danger');return;}
   const fnivel=document.getElementById('h-nivel').value;
@@ -1087,7 +1089,6 @@ window.exportHistoryPpt=async function(){
     const summary=computeLevelSummary(list);
     const todayStr=new Date().toLocaleDateString('es-MX');
 
-    // ── Slide 1: Portada con estadísticas generales ──
     let s1=pptx.addSlide();
     s1.background={color:C.dark};
     s1.addText('Reporte General QRQC — '+CAT_LABELS[histCategoria],{x:0.5,y:0.5,w:9,h:0.6,fontSize:26,bold:true,color:'FFFFFF',fontFace:'Arial'});
@@ -1112,7 +1113,6 @@ window.exportHistoryPpt=async function(){
     });
     s1.addText('Nivel de madurez alcanzado (según la evaluación más reciente de cada foro)',{x:0.5,y:4.15,w:9,h:0.4,fontSize:10,italic:true,color:'BFDBFE'});
 
-    // ── Slide(s): tabla con TODOS los foros y su porcentaje, de mayor a menor ──
     let s2=pptx.addSlide();
     s2.addText('Todos los Foros — Porcentaje de Evaluación',{x:0.4,y:0.28,w:9,h:0.5,fontSize:17,bold:true,color:C.dark});
     s2.addText('Ordenado de mayor a menor porcentaje',{x:0.4,y:0.7,w:9,h:0.3,fontSize:10,color:C.gray});
@@ -1221,6 +1221,68 @@ window.admSaveCrit=async function(){try{showLoader('Guardando…');await fbSaveC
 window.renderEmpList=function(){let html='';Object.entries(employees).sort().forEach(([id,emp])=>{html+=`<div class="emp-row"><span class="emp-num">${id}</span><span class="badge b-${emp.role}">${emp.role}</span><span style="flex:1;color:var(--gray-500);font-size:11px">${emp.name||''}</span><button class="btn-g" style="color:var(--red);padding:3px 6px" onclick="removeEmp('${id}')" ${id==='9999'?'disabled':''}><i class="ti ti-trash"></i></button></div>`;});document.getElementById('emp-list').innerHTML=html||'<p style="color:var(--gray-400);padding:7px;font-size:11px">Sin empleados</p>';};
 window.addEmp=async function(){const id=document.getElementById('new-emp').value.trim();const role=document.getElementById('new-role').value;if(!id){toast('Ingresa un número','danger');return;}if(employees[id]){toast('Ese número ya existe','warning');return;}employees[id]={role,name:'Empleado '+id};try{await fbSaveEmployees(employees);renderEmpList();document.getElementById('new-emp').value='';toast('Empleado '+id+' agregado','success');}catch(e){toast('Error: '+e.message,'danger');}};
 window.removeEmp=async function(id){if(id==='9999'){toast('No se puede eliminar el admin principal','danger');return;}if(!confirm('¿Eliminar empleado '+id+'?'))return;delete employees[id];try{await fbSaveEmployees(employees);renderEmpList();toast('Empleado eliminado','warning');}catch(e){toast('Error: '+e.message,'danger');}};
+
+// ── ADMIN: GESTIÓN DE FOROS ──
+const NIVELES_QRQC=['N1','N2','N3'];
+function foroExists(nombre,nivel,skipIdx){
+  return foros.some((f,i)=>i!==skipIdx&&f.nivel===nivel&&f.nombre.trim().toLowerCase()===nombre.trim().toLowerCase());
+}
+async function saveForosAndRefresh(msg,type='success'){
+  try{
+    showLoader('Guardando foros…');
+    await fbSaveForos(foros);
+    hideLoader();
+    renderAdminForos();
+    filterNivel(selectedNivel);
+    toast(msg,type);
+  }catch(e){hideLoader();toast('Error: '+e.message,'danger');}
+}
+window.renderAdminForos=function(){
+  const f=document.getElementById('adm-foro-nivel').value;
+  let html='';
+  NIVELES_QRQC.forEach(n=>{
+    if(f&&f!==n)return;
+    const items=foros.map((fo,i)=>({...fo,i})).filter(fo=>fo.nivel===n);
+    html+=`<div style="font-size:11px;font-weight:700;color:var(--gray-600);margin:12px 0 4px;display:flex;align-items:center;gap:6px"><span class="badge b-${n}">${n}</span>${items.length} foro(s)</div>`;
+    if(!items.length)html+='<p style="color:var(--gray-400);padding:5px;font-size:11px">Sin foros en este nivel</p>';
+    items.forEach(fo=>{
+      html+=`<div class="emp-row">
+        <input type="text" value="${escH(fo.nombre)}" onchange="admRenameForo(${fo.i},this.value)" style="flex:1;font-size:11px"/>
+        <select style="width:70px;font-size:11px" title="Mover a otro nivel" onchange="admMoveForo(${fo.i},this.value)">${NIVELES_QRQC.map(x=>`<option value="${x}" ${x===n?'selected':''}>${x}</option>`).join('')}</select>
+        <button class="btn-g" style="color:var(--red);padding:3px 6px" title="Eliminar foro" onclick="admDelForo(${fo.i})"><i class="ti ti-trash"></i></button>
+      </div>`;
+    });
+  });
+  document.getElementById('adm-foro-list').innerHTML=html;
+};
+window.admAddForo=async function(){
+  const nombre=document.getElementById('new-foro').value.trim();
+  const nivel=document.getElementById('new-foro-nivel').value;
+  if(!nombre){toast('Escribe el nombre del foro','danger');return;}
+  if(foroExists(nombre,nivel,-1)){toast('Ese foro ya existe en '+nivel,'warning');return;}
+  foros.push({nivel,nombre});
+  document.getElementById('new-foro').value='';
+  await saveForosAndRefresh('Foro agregado en '+nivel);
+};
+window.admRenameForo=async function(i,val){
+  const nombre=val.trim();
+  const old=foros[i].nombre;
+  if(!nombre){toast('El nombre no puede estar vacío','danger');renderAdminForos();return;}
+  if(nombre===old)return;
+  if(foroExists(nombre,foros[i].nivel,i)){toast('Ya existe un foro con ese nombre en '+foros[i].nivel,'warning');renderAdminForos();return;}
+  foros[i].nombre=nombre;
+  await saveForosAndRefresh('Renombrado: '+old+' → '+nombre);
+};
+window.admMoveForo=async function(i,nivel){
+  if(foroExists(foros[i].nombre,nivel,i)){toast('Ya existe ese foro en '+nivel,'warning');renderAdminForos();return;}
+  foros[i].nivel=nivel;
+  await saveForosAndRefresh('Foro movido a '+nivel);
+};
+window.admDelForo=async function(i){
+  if(!confirm('¿Eliminar el foro "'+foros[i].nombre+'" ('+foros[i].nivel+')?'))return;
+  foros.splice(i,1);
+  await saveForosAndRefresh('Foro eliminado','warning');
+};
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
