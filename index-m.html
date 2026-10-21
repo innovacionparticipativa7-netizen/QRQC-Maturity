@@ -146,6 +146,10 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
 #eval-cat-banner.show{display:flex}
 .b-lideres{background:#f3e8ff;color:#6d28d9}
 .b-foros{background:var(--blue-l);color:var(--blue-d)}
+/* ── CASILLA "LÍDERES" EN ADMIN DE FOROS ── */
+.lid-chk{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:#6d28d9;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:4px;padding:4px 8px;white-space:nowrap;cursor:pointer;margin:0}
+.lid-chk input{accent-color:#7c3aed;width:13px;height:13px;cursor:pointer}
+.lid-chk.off{color:var(--gray-400);background:var(--gray-50);border-color:var(--gray-200)}
 </style>
 </head>
 <body>
@@ -351,10 +355,14 @@ tr.sec-first-row td{border-top:3px solid #64748b !important;}
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end">
           <div style="flex:1;min-width:160px"><label>Nombre del nuevo foro</label><input type="text" id="new-foro" placeholder="Ej: A220 Galleys G3 APT" onkeydown="if(event.key==='Enter')admAddForo()"/></div>
           <div style="flex:0 0 90px"><label>Nivel</label><select id="new-foro-nivel"><option value="N1">N1</option><option value="N2">N2</option><option value="N3">N3</option></select></div>
+          <label class="lid-chk" style="align-self:center" title="Se podrá evaluar en Líderes y Supervisores"><input type="checkbox" id="new-foro-lider" checked/> Líderes</label>
           <button class="btn-p" onclick="admAddForo()"><i class="ti ti-plus"></i> Agregar foro</button>
         </div>
-        <div class="alert a-info" style="font-size:11px;margin-bottom:8px"><i class="ti ti-info-circle"></i> Para cambiar el nombre, edita el texto y da clic fuera del campo. El cambio se guarda automáticamente.</div>
-        <div id="adm-foro-list" style="max-height:360px;overflow-y:auto"></div>
+        <div class="alert a-info" style="font-size:11px;margin-bottom:8px;flex-direction:column;align-items:flex-start;gap:3px">
+          <span><i class="ti ti-info-circle"></i> Para cambiar el nombre, edita el texto y da clic fuera del campo. El cambio se guarda automáticamente.</span>
+          <span><i class="ti ti-users-group"></i> Marca <strong>Líderes</strong> en los foros que se podrán evaluar en la pestaña <strong>Líderes y Supervisores</strong>.</span>
+        </div>
+        <div id="adm-foro-list" style="max-height:400px;overflow-y:auto"></div>
       </div>
 
       <div class="card" style="padding:16px">
@@ -497,6 +505,8 @@ let evalCategoria='foros';   // 'foros' o 'lideres' (lo que se está evaluando)
 let histCategoria='foros';   // 'foros' o 'lideres' (lo que se ve en historial)
 const CAT_LABELS={foros:'Foros',lideres:'Líderes y Supervisores'};
 function catOf(e){return e.categoria==='lideres'?'lideres':'foros';}
+// Un foro se puede evaluar en Líderes si no ha sido desmarcado por el admin
+function foroEnLideres(f){return f.lideres!==false;}
 function setEvalCategoriaUI(){
   const esLider=evalCategoria==='lideres';
   document.getElementById('eval-cat-banner').classList.toggle('show',esLider);
@@ -566,8 +576,14 @@ window.filterNivel=function(n){
     btn.textContent.trim()===n?btn.classList.remove('inactive'):btn.classList.add('inactive');
   });
   const sel=document.getElementById('f-foro');
-  sel.innerHTML='<option value="">— Selecciona un foro —</option>';
-  foros.filter(f=>f.nivel===n).forEach(f=>{const opt=document.createElement('option');opt.value=f.nombre;opt.textContent=f.nombre;sel.appendChild(opt);});
+  const esLider=evalCategoria==='lideres';
+  const lista=foros.filter(f=>f.nivel===n&&(!esLider||foroEnLideres(f)));
+  if(!lista.length){
+    sel.innerHTML='<option value="">'+(esLider?'— No hay foros habilitados para líderes en '+n+' —':'— No hay foros en '+n+' —')+'</option>';
+  }else{
+    sel.innerHTML='<option value="">— Selecciona un foro —</option>';
+    lista.forEach(f=>{const opt=document.createElement('option');opt.value=f.nombre;opt.textContent=f.nombre;sel.appendChild(opt);});
+  }
   document.getElementById('foro-badge').classList.remove('show');
 };
 
@@ -1243,11 +1259,21 @@ window.renderAdminForos=function(){
   NIVELES_QRQC.forEach(n=>{
     if(f&&f!==n)return;
     const items=foros.map((fo,i)=>({...fo,i})).filter(fo=>fo.nivel===n);
-    html+=`<div style="font-size:11px;font-weight:700;color:var(--gray-600);margin:12px 0 4px;display:flex;align-items:center;gap:6px"><span class="badge b-${n}">${n}</span>${items.length} foro(s)</div>`;
+    const nLid=items.filter(fo=>foroEnLideres(fo)).length;
+    html+=`<div style="font-size:11px;font-weight:700;color:var(--gray-600);margin:12px 0 4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span class="badge b-${n}">${n}</span>${items.length} foro(s)
+      <span style="color:#6d28d9;font-weight:600">· ${nLid} para líderes</span>
+      ${items.length?`<span style="margin-left:auto;display:flex;gap:4px">
+        <button style="font-size:10px;padding:2px 8px;color:#6d28d9;border-color:#d8b4fe" onclick="admBulkLider('${n}',true)"><i class="ti ti-checks"></i> Todos a líderes</button>
+        <button style="font-size:10px;padding:2px 8px" onclick="admBulkLider('${n}',false)"><i class="ti ti-square"></i> Ninguno</button>
+      </span>`:''}
+    </div>`;
     if(!items.length)html+='<p style="color:var(--gray-400);padding:5px;font-size:11px">Sin foros en este nivel</p>';
     items.forEach(fo=>{
+      const on=foroEnLideres(fo);
       html+=`<div class="emp-row">
         <input type="text" value="${escH(fo.nombre)}" onchange="admRenameForo(${fo.i},this.value)" style="flex:1;font-size:11px"/>
+        <label class="lid-chk ${on?'':'off'}" title="Se puede evaluar en Líderes y Supervisores"><input type="checkbox" ${on?'checked':''} onchange="admToggleLider(${fo.i},this.checked)"/> Líderes</label>
         <select style="width:70px;font-size:11px" title="Mover a otro nivel" onchange="admMoveForo(${fo.i},this.value)">${NIVELES_QRQC.map(x=>`<option value="${x}" ${x===n?'selected':''}>${x}</option>`).join('')}</select>
         <button class="btn-g" style="color:var(--red);padding:3px 6px" title="Eliminar foro" onclick="admDelForo(${fo.i})"><i class="ti ti-trash"></i></button>
       </div>`;
@@ -1258,9 +1284,10 @@ window.renderAdminForos=function(){
 window.admAddForo=async function(){
   const nombre=document.getElementById('new-foro').value.trim();
   const nivel=document.getElementById('new-foro-nivel').value;
+  const lideres=document.getElementById('new-foro-lider').checked;
   if(!nombre){toast('Escribe el nombre del foro','danger');return;}
   if(foroExists(nombre,nivel,-1)){toast('Ese foro ya existe en '+nivel,'warning');return;}
-  foros.push({nivel,nombre});
+  foros.push({nivel,nombre,lideres});
   document.getElementById('new-foro').value='';
   await saveForosAndRefresh('Foro agregado en '+nivel);
 };
@@ -1282,6 +1309,14 @@ window.admDelForo=async function(i){
   if(!confirm('¿Eliminar el foro "'+foros[i].nombre+'" ('+foros[i].nivel+')?'))return;
   foros.splice(i,1);
   await saveForosAndRefresh('Foro eliminado','warning');
+};
+window.admToggleLider=async function(i,val){
+  foros[i].lideres=val;
+  await saveForosAndRefresh(val?'"'+foros[i].nombre+'" habilitado para líderes':'"'+foros[i].nombre+'" quitado de líderes',val?'success':'warning');
+};
+window.admBulkLider=async function(nivel,val){
+  foros.forEach(f=>{if(f.nivel===nivel)f.lideres=val;});
+  await saveForosAndRefresh(val?'Todos los foros de '+nivel+' habilitados para líderes':'Foros de '+nivel+' quitados de líderes',val?'success':'warning');
 };
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
